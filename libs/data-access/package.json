@@ -22,9 +22,10 @@
     ]
   },
   "dependencies": {
-    "tslib": "^2.3.0",
+    "@org/shared-types": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.2",
-    "@sap/hana-client": "^2.27.19"
+    "@sap/hana-client": "^2.27.19",
+    "tslib": "^2.3.0"
   }
 }
