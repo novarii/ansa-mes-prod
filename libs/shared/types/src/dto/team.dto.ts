@@ -6,8 +6,6 @@
  * @see specs/feature-team-calendar.md
  */
 
-import type { WorkerStatus } from '../entities/resource.entity.js';
-
 /**
  * Shift code type
  */

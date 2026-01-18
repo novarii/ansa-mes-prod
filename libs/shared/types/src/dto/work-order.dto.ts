@@ -9,8 +9,6 @@
  * @see specs/entity-repository-patterns.md
  */
 
-import type { WorkOrderStatusCode, WorkOrderWithDetails } from '../entities/work-order.entity.js';
-
 /**
  * Work order list request filters
  */
