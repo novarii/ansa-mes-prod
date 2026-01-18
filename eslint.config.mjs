@@ -42,12 +42,14 @@ export default [
               sourceTag: 'type:data-access',
               onlyDependOnLibsWithTags: ['type:types'],
             },
-            // feature-* can import shared/* and data-access
+            // feature-* can import shared/*, data-access, and other feature libraries
+            // (auth decorators/guards are cross-cutting concerns needed by all features)
             {
               sourceTag: 'scope:feature',
               onlyDependOnLibsWithTags: [
                 'scope:shared',
                 'type:data-access',
+                'scope:feature',
               ],
             },
             // apps/api can import all libs

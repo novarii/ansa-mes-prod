@@ -23,6 +23,9 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@nestjs/common": "^11.0.0"
+    "@nestjs/common": "^11.0.0",
+    "@org/data-access": "workspace:*",
+    "@org/shared-types": "workspace:*",
+    "@org/feature-auth": "workspace:*"
   }
 }
