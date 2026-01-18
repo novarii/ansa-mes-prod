@@ -6,7 +6,7 @@ create tests before implementation (if not already covered)
 author property based tests or unit tests or use playwright cli for app functions (which ever is the best)
 study existing code before implementing
 after making changes to files run the tests
-when tests pass, commit changes and mark the task complete in IMPLEMENTATION_PLAN
+when tests pass, commit and push changes and mark the task complete in IMPLEMENTATION_PLAN, dont move to the next task!
 
 IMPORTANT:
 only make a PR when all tasks are completed in IMPLEMENTATION_PLAN
