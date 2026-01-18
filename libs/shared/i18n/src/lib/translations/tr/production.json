@@ -1,0 +1,53 @@
+{
+  "title": "Uretim",
+  "entry": {
+    "title": "Tamamlanan Miktar Girisi",
+    "batchSerial": "Parti/Seri No",
+    "accept": "Kabul",
+    "reject": "Red",
+    "saveQuantity": "Uretilen Miktari Kaydet"
+  },
+  "pickList": {
+    "title": "Cekme Listesi",
+    "unpicked": "Cekilmeyen Urun Listesi",
+    "stockCode": "Stok Kodu",
+    "stockName": "Stok Adi",
+    "file": "Dosya",
+    "pickedQty": "Cekilen Miktar",
+    "plannedQty": "Planlanan Miktar",
+    "serialNumber": "Seri Numarasi",
+    "warehouse": "Deposu",
+    "action": "Islem",
+    "sapNote": "Malzeme cikislari SAP uzerinden yapilmaktadir"
+  },
+  "movements": {
+    "title": "Giris Hareketleri",
+    "select": "Sec",
+    "date": "Tarih",
+    "time": "Saat",
+    "personnel": "Personel",
+    "description": "Aciklama",
+    "warehouseCode": "Depo Kod",
+    "unit": "Birim"
+  },
+  "breakReason": {
+    "title": "Dur - Mola Nedeni Secin",
+    "search": "Mola nedeni ara...",
+    "notes": "Notlar",
+    "notesPlaceholder": "Ek aciklama ekleyin (istege bagli)"
+  },
+  "activity": {
+    "started": "Is Emri Baslatildi",
+    "stopped": "Is Emri Durduruldu",
+    "resumed": "Is Emri Devam Ediyor",
+    "finished": "Is Emri Tamamlandi",
+    "currentState": "Mevcut Durum"
+  },
+  "validation": {
+    "quantityRequired": "Miktar girilmelidir",
+    "quantityPositive": "Miktar sifirdan buyuk olmalidir",
+    "quantityExceedsRemaining": "Girilen miktar kalan miktardan buyuk olamaz",
+    "breakReasonRequired": "Mola nedeni secilmelidir",
+    "confirmLargeEntry": "Girilen miktar kalan miktarin %50'sinden fazla. Devam etmek istiyor musunuz?"
+  }
+}

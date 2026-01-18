@@ -1,0 +1,53 @@
+{
+  "actions": {
+    "save": "Kaydet",
+    "cancel": "Iptal",
+    "delete": "Sil",
+    "edit": "Duzenle",
+    "search": "Ara",
+    "filter": "Filtrele",
+    "clearFilters": "Filtreleri Temizle",
+    "close": "Kapat",
+    "confirm": "Onayla",
+    "back": "Geri",
+    "next": "Ileri",
+    "submit": "Gonder",
+    "refresh": "Yenile",
+    "login": "Giris Yap",
+    "logout": "Cikis Yap"
+  },
+  "status": {
+    "loading": "Yukleniyor...",
+    "error": "Hata",
+    "success": "Basarili",
+    "noData": "Veri bulunamadi",
+    "pending": "Beklemede",
+    "active": "Aktif",
+    "inactive": "Pasif"
+  },
+  "units": {
+    "kilogram": "Kilogram",
+    "kilo": "kg",
+    "piece": "Adet",
+    "meter": "Metre",
+    "hour": "Saat",
+    "minute": "Dakika"
+  },
+  "priority": {
+    "low": "Dusuk",
+    "normal": "Normal",
+    "high": "Yuksek",
+    "urgent": "Acil"
+  },
+  "validation": {
+    "required": "Bu alan zorunludur",
+    "invalidFormat": "Gecersiz format",
+    "minLength": "Minimum {min} karakter girilmelidir",
+    "maxLength": "Maksimum {max} karakter girilmelidir"
+  },
+  "confirm": {
+    "title": "Onay",
+    "delete": "Bu islemi silmek istediginizden emin misiniz?",
+    "cancel": "Iptal etmek istediginizden emin misiniz?"
+  }
+}

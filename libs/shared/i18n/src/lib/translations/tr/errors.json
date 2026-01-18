@@ -1,0 +1,38 @@
+{
+  "generic": {
+    "title": "Hata",
+    "unknown": "Beklenmeyen bir hata olustu",
+    "serverError": "Sunucu hatasi. Lutfen daha sonra tekrar deneyin",
+    "networkError": "Baglanti hatasi. Internet baglantinizi kontrol edin",
+    "notFound": "Sayfa bulunamadi",
+    "forbidden": "Bu sayfaya erisim izniniz yok"
+  },
+  "workOrder": {
+    "notFound": "Is emri bulunamadi",
+    "invalidStatus": "Gecersiz is emri durumu",
+    "cannotStart": "Bu is emri baslatilamaz",
+    "cannotStop": "Bu is emri durdurulamaz",
+    "cannotFinish": "Bu is emri tamamlanamaz",
+    "alreadyStarted": "Is emri zaten baslatilmis",
+    "alreadyStopped": "Is emri zaten durdurulmus",
+    "alreadyFinished": "Is emri zaten tamamlanmis"
+  },
+  "production": {
+    "entryFailed": "Uretim girisi kaydedilemedi",
+    "invalidQuantity": "Gecersiz miktar",
+    "exceedsRemaining": "Girilen miktar kalan miktardan fazla",
+    "batchGenerationFailed": "Parti numarasi olusturulamadi"
+  },
+  "auth": {
+    "loginFailed": "Giris basarisiz",
+    "sessionExpired": "Oturum suresi doldu",
+    "stationNotAuthorized": "Bu istasyona erisim yetkiniz yok"
+  },
+  "validation": {
+    "required": "{field} zorunludur",
+    "invalid": "{field} gecersiz",
+    "tooShort": "{field} cok kisa",
+    "tooLong": "{field} cok uzun",
+    "outOfRange": "{field} izin verilen aralik disinda"
+  }
+}

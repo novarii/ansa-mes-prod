@@ -1,0 +1,64 @@
+{
+  "title": "Is Emirleri",
+  "detail": {
+    "code": "Is Emri Kodu",
+    "title": "Baslik",
+    "todos": "Yapilacaklar",
+    "notes": "Aciklamalar",
+    "quantity": "Miktar",
+    "priority": "Oncelik",
+    "startTime": "Baslangic",
+    "dueDate": "Teslim Tarihi",
+    "customer": "Musteri",
+    "warehouse": "Depo"
+  },
+  "status": {
+    "started": "Baslatildi",
+    "notStarted": "Baslatilmadi",
+    "completed": "Tamamlandi",
+    "stopped": "Durduruldu",
+    "cancelled": "Iptal Edildi",
+    "released": "Serbest Birakildi",
+    "planned": "Planlandi",
+    "closed": "Kapatildi"
+  },
+  "actions": {
+    "start": "Baslat",
+    "stop": "Durdur",
+    "continue": "Devam",
+    "finish": "Bitir",
+    "generateBarcode": "Barkod Olustur",
+    "closeProduction": "Uretimi Kapat",
+    "productionEntry": "Uretimden Giris",
+    "entryMovements": "Giris Hareketleri"
+  },
+  "columns": {
+    "status": "Durum",
+    "project": "Proje",
+    "itemCode": "Kalem Kodu",
+    "itemDescription": "Kalem Tanimi",
+    "station": "Istasyon",
+    "workOrderNo": "Is Emri No",
+    "responsible": "Sorumlu",
+    "defaultResponsible": "Is Emri Varsayilan Sorumlu",
+    "customer": "Musteri",
+    "customerName": "Musteri Tanimi",
+    "sequence": "Sira No",
+    "plannedQty": "Planlanan Miktar",
+    "completedQty": "Tamamlanan Miktar",
+    "remainingQty": "Kalan Miktar",
+    "rejectedQty": "Reddedilen Miktar",
+    "projectName": "Proje Adi"
+  },
+  "tabs": {
+    "general": "Genel",
+    "images": "Resimler",
+    "orderImage": "Siparis Resim",
+    "pickList": "Cekme Listesi"
+  },
+  "filters": {
+    "customer": "Musteri Adi",
+    "station": "Istasyon",
+    "searchPlaceholder": "Tabloda Ara"
+  }
+}
