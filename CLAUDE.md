@@ -6,45 +6,55 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 All tasks should be run through Nx rather than underlying tooling directly:
 
+> **Note:** Nx project names differ from npm package names. Use `pnpm nx show projects` to list actual project names.
+> - **Apps** use `@org/` prefix: `@org/api`, `@org/web`
+> - **Libraries** use simple names: `feature-auth`, `data-access`, `types`, `i18n`
+
 ```bash
 # Install dependencies
 pnpm install
 
 # Build all projects
-nx run-many -t build
+pnpm nx run-many -t build
 
 # Build a specific project
-nx build @org/api
-nx build @org/web
+pnpm nx build @org/api          # App (uses @org/ prefix)
+pnpm nx build data-access       # Library (no prefix)
 
 # Run development servers
-nx serve @org/api       # NestJS API on port 3000 (default)
-nx serve @org/web       # React web app on port 4200
+pnpm nx serve @org/api          # NestJS API on port 3000 (default)
+pnpm nx serve @org/web          # React web app on port 4200
 
 # Lint
-nx run-many -t lint
-nx lint @org/api
+pnpm nx run-many -t lint
+pnpm nx lint @org/api
+pnpm nx lint feature-auth       # Library
 
 # Run tests
-nx run-many -t test
-nx test @org/api        # Jest tests for API
-nx test @org/web        # Vitest tests for web
+pnpm nx run-many -t test
+pnpm nx test @org/api           # Jest tests for API
+pnpm nx test @org/web           # Vitest tests for web
+pnpm nx test feature-auth       # Library tests
+pnpm nx test data-access        # Library tests
 
 # Run a single test file
-nx test @org/api -- --testPathPattern=app.controller.spec
-nx test @org/web -- src/app/app.spec.tsx
+pnpm nx test @org/api -- --testPathPattern=app.controller.spec
+pnpm nx test @org/web -- src/app/app.spec.tsx
 
 # Type checking
-nx run-many -t typecheck
-nx typecheck @org/api
+pnpm nx run-many -t typecheck
+pnpm nx typecheck @org/api
 
 # E2E tests
-nx e2e @org/api-e2e     # Jest-based API e2e tests
-nx e2e @org/web-e2e     # Playwright-based web e2e tests
+pnpm nx e2e @org/api-e2e        # Jest-based API e2e tests
+pnpm nx e2e @org/web-e2e        # Playwright-based web e2e tests
 
 # Run affected projects only (useful for CI/large changes)
-nx affected -t build
-nx affected -t test
+pnpm nx affected -t build
+pnpm nx affected -t test
+
+# Sync TypeScript project references (run after adding dependencies)
+pnpm nx sync
 ```
 
 ## Architecture Overview
@@ -53,6 +63,7 @@ This is an Nx monorepo with pnpm workspaces containing a full-stack application:
 
 ### Projects
 
+**Apps** (Nx name = npm name with `@org/` prefix):
 - **@org/api** (`apps/api/`) - NestJS backend API
   - Bundled with Webpack
   - Tests with Jest
@@ -67,6 +78,22 @@ This is an Nx monorepo with pnpm workspaces containing a full-stack application:
 
 - **@org/api-e2e** (`apps/api-e2e/`) - API integration tests (Jest)
 - **@org/web-e2e** (`apps/web-e2e/`) - Web E2E tests (Playwright)
+
+**Libraries** (Nx name ≠ npm name):
+| Nx Project Name | npm Package Name | Location |
+|-----------------|------------------|----------|
+| `types` | `@org/shared-types` | `libs/shared/types/` |
+| `utils` | `@org/shared-utils` | `libs/shared/utils/` |
+| `i18n` | `@org/shared-i18n` | `libs/shared/i18n/` |
+| `data-access` | `@org/data-access` | `libs/data-access/` |
+| `feature-auth` | `@org/feature-auth` | `libs/feature-auth/` |
+| `feature-work-orders` | `@org/feature-work-orders` | `libs/feature-work-orders/` |
+| `feature-production` | `@org/feature-production` | `libs/feature-production/` |
+| `feature-team` | `@org/feature-team` | `libs/feature-team/` |
+| `feature-calendar` | `@org/feature-calendar` | `libs/feature-calendar/` |
+
+Use **Nx project name** for commands: `pnpm nx test feature-auth`
+Use **npm package name** for imports: `import { X } from '@org/feature-auth'`
 
 ### Key Configuration Files
 

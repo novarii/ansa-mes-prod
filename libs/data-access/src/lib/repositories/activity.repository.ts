@@ -20,6 +20,17 @@ interface LatestActivityResult {
 }
 
 /**
+ * Activity result for today's team view
+ */
+export interface TodayActivityResult {
+  U_EmpId: string;
+  U_ResCode: string;
+  U_ProcType: string;
+  U_WorkOrder: string;
+  U_Start: Date | string;
+}
+
+/**
  * Activity Repository
  *
  * Provides data access for activity tracking records in @ATELIERATTN table.
@@ -192,6 +203,49 @@ export class ActivityRepository {
     `;
 
     return this.hanaService.query<ActivityWithDetails>(sql, [String(docEntry)]);
+  }
+
+  /**
+   * Find today's activities for a list of workers on a specific machine
+   *
+   * Used for team view to determine worker status (assigned/paused/available).
+   * Returns activities sorted by start time descending so the latest activity
+   * for each worker comes first.
+   *
+   * @param empIds - Array of employee IDs
+   * @param resCode - Machine resource code
+   * @returns Array of today's activities for the specified workers
+   */
+  async findTodayActivitiesForWorkers(
+    empIds: number[],
+    resCode: string
+  ): Promise<TodayActivityResult[]> {
+    if (empIds.length === 0) {
+      return [];
+    }
+
+    // Build IN clause for employee IDs
+    const empIdStrings = empIds.map((id) => String(id));
+    const placeholders = empIdStrings.map(() => '?').join(', ');
+
+    const sql = `
+      SELECT
+        "U_EmpId",
+        "U_ResCode",
+        "U_ProcType",
+        "U_WorkOrder",
+        "U_Start"
+      FROM "@ATELIERATTN"
+      WHERE "U_ResCode" = ?
+        AND "U_EmpId" IN (${placeholders})
+        AND "U_Start" >= CURRENT_DATE
+      ORDER BY "U_Start" DESC
+    `;
+
+    return this.hanaService.query<TodayActivityResult>(sql, [
+      resCode,
+      ...empIdStrings,
+    ]);
   }
 
   /**

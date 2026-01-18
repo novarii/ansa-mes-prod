@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { HanaService, QueryParam } from '../hana.service';
-import { WorkOrderWithDetails } from '@org/shared-types';
+import { WorkOrderWithDetails, WorkOrderStatusCode } from '@org/shared-types';
 
 /**
  * Filter options for work order queries
@@ -22,6 +22,37 @@ export interface WorkOrderFilters {
 export interface CustomerOption {
   CardCode: string;
   CardName: string;
+}
+
+/**
+ * Filter options for calendar work order queries
+ */
+export interface CalendarWorkOrderFilters {
+  /** Start date (ISO format, required) */
+  startDate: string;
+  /** End date (ISO format, required) */
+  endDate: string;
+  /** Station/machine filter (optional) */
+  stationCode?: string;
+  /** Status filter (optional, default excludes cancelled) */
+  status?: WorkOrderStatusCode | 'all';
+}
+
+/**
+ * Work order data for calendar view
+ */
+export interface CalendarWorkOrder {
+  DocEntry: number;
+  DocNum: number;
+  ItemCode: string;
+  ItemName: string;
+  StartDate: string | Date;
+  DueDate: string | Date;
+  Status: WorkOrderStatusCode;
+  CardCode: string | null;
+  CustomerName: string | null;
+  MachineCode: string | null;
+  MachineName: string | null;
 }
 
 /**
@@ -191,5 +222,68 @@ export class WorkOrderRepository {
     `;
 
     return this.hanaService.query<CustomerOption>(sql);
+  }
+
+  /**
+   * Find work orders for calendar view within a date range
+   *
+   * Returns work orders that fall within the specified date range,
+   * optionally filtered by station and status.
+   *
+   * @param filters - Calendar filters (startDate, endDate, stationCode, status)
+   * @returns Array of work orders for calendar display
+   *
+   * @see specs/feature-team-calendar.md
+   */
+  async findForCalendar(
+    filters: CalendarWorkOrderFilters
+  ): Promise<CalendarWorkOrder[]> {
+    const { startDate, endDate, stationCode, status } = filters;
+    const params: QueryParam[] = [startDate, endDate];
+
+    // Build WHERE conditions
+    const conditions: string[] = [
+      'T0."StartDate" <= ?',
+      'T0."DueDate" >= ?',
+    ];
+
+    // Filter by status (default: exclude cancelled)
+    if (status && status !== 'all') {
+      conditions.push('T0."Status" = ?');
+      params.push(status);
+    } else if (!status) {
+      // By default, exclude cancelled orders
+      conditions.push('T0."Status" != \'C\'');
+    }
+
+    // Optional station filter
+    if (stationCode) {
+      conditions.push('T2."ResCode" = ?');
+      params.push(stationCode);
+    }
+
+    const sql = `
+      SELECT
+        T0."DocEntry",
+        T0."DocNum",
+        T0."ItemCode",
+        T4."ItemName",
+        T0."StartDate",
+        T0."DueDate",
+        T0."Status",
+        T0."CardCode",
+        T3."CardName" AS "CustomerName",
+        T2."ResCode" AS "MachineCode",
+        T2."ResName" AS "MachineName"
+      FROM "OWOR" T0
+      LEFT JOIN "ITT1" T1 ON T0."ItemCode" = T1."Father" AND T1."Type" = 290
+      LEFT JOIN "ORSC" T2 ON T1."Code" = T2."ResCode"
+      LEFT JOIN "OCRD" T3 ON T0."CardCode" = T3."CardCode"
+      LEFT JOIN "OITM" T4 ON T0."ItemCode" = T4."ItemCode"
+      WHERE ${conditions.join(' AND ')}
+      ORDER BY T0."StartDate" ASC, T0."DueDate" ASC
+    `;
+
+    return this.hanaService.query<CalendarWorkOrder>(sql, params);
   }
 }
