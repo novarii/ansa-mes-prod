@@ -17,6 +17,30 @@
     },
     {
       "path": "./libs/shared/i18n"
+    },
+    {
+      "path": "./libs/shared/types"
+    },
+    {
+      "path": "./libs/shared/utils"
+    },
+    {
+      "path": "./libs/data-access"
+    },
+    {
+      "path": "./libs/feature-production"
+    },
+    {
+      "path": "./libs/feature-team"
+    },
+    {
+      "path": "./libs/feature-auth"
+    },
+    {
+      "path": "./libs/feature-work-orders"
+    },
+    {
+      "path": "./libs/feature-calendar"
     }
   ]
 }
