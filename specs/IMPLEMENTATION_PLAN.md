@@ -378,9 +378,11 @@ Endpoints:
 
 ---
 
-## Phase 9: Team & Calendar Modules (API)
+## Phase 9: Team & Calendar Modules (API) ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 50 passing (24 TeamService/Controller + 26 CalendarService/Controller)
 
 > Reference: `specs/feature-team-calendar.md`
 
