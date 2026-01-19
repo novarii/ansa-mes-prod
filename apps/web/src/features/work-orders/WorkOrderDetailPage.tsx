@@ -5,11 +5,12 @@
  * - General tab: Work order details, quantities, dates
  * - Documents tab: PDF viewer for associated documents
  * - Pick List tab: BOM materials (read-only)
+ * - Production controls: Activity buttons, production entry
  *
  * @see specs/feature-production.md
  */
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useI18n } from '@org/shared-i18n';
 import type {
@@ -20,10 +21,16 @@ import { useApiQuery } from '../../hooks/useApi';
 import { Layout, PageHeader, Spinner } from '../../components';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { AlertCircle } from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { AlertCircle, ClipboardList } from 'lucide-react';
 import { GeneralTab } from './GeneralTab';
 import { DocumentsTab } from './DocumentsTab';
 import { PickListTab } from './PickListTab';
+import {
+  ActivityButtons,
+  BreakReasonModal,
+  ProductionEntryModal,
+} from '../production';
 
 /**
  * Work Order Detail Page
@@ -34,15 +41,48 @@ export function WorkOrderDetailPage(): React.ReactElement {
   const { docEntry } = useParams<{ docEntry: string }>();
   const { t } = useI18n();
 
+  // Modal state
+  const [isBreakReasonModalOpen, setIsBreakReasonModalOpen] = useState(false);
+  const [isProductionEntryModalOpen, setIsProductionEntryModalOpen] = useState(false);
+
   // Fetch work order detail
   const {
     data: workOrder,
     isLoading,
     error,
+    refetch,
   } = useApiQuery<WorkOrderDetailResponse>(
     ['workOrder', docEntry],
     `/work-orders/${docEntry}`
   );
+
+  // Handlers for modals
+  const handleBreakReasonRequired = useCallback(() => {
+    setIsBreakReasonModalOpen(true);
+  }, []);
+
+  const handleBreakReasonClose = useCallback(() => {
+    setIsBreakReasonModalOpen(false);
+  }, []);
+
+  const handleBreakReasonSuccess = useCallback(() => {
+    setIsBreakReasonModalOpen(false);
+    // Refresh activity state (handled by ActivityButtons invalidation)
+  }, []);
+
+  const handleProductionEntryClick = useCallback(() => {
+    setIsProductionEntryModalOpen(true);
+  }, []);
+
+  const handleProductionEntryClose = useCallback(() => {
+    setIsProductionEntryModalOpen(false);
+  }, []);
+
+  const handleProductionEntrySuccess = useCallback(() => {
+    setIsProductionEntryModalOpen(false);
+    // Refresh work order data
+    refetch();
+  }, [refetch]);
 
   // Loading state
   if (isLoading) {
@@ -106,6 +146,31 @@ export function WorkOrderDetailPage(): React.ReactElement {
         backLabel={t('common.actions.back') || 'Geri'}
       />
 
+      {/* Production Controls Section */}
+      <div className="mb-6 space-y-4" data-testid="production-controls">
+        {/* Activity Buttons */}
+        <div className="rounded-lg border bg-card p-4">
+          <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+            {t('production.activity.currentState')}
+          </h3>
+          <div className="flex flex-wrap items-center gap-4">
+            <ActivityButtons
+              docEntry={workOrder.docEntry}
+              onBreakReasonRequired={handleBreakReasonRequired}
+            />
+            <div className="flex-1" />
+            <Button
+              variant="outline"
+              onClick={handleProductionEntryClick}
+              data-testid="production-entry-button"
+            >
+              <ClipboardList className="mr-2 size-4" />
+              {t('workOrders.actions.productionEntry')}
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <Tabs defaultValue="general" className="w-full">
         <TabsList>
           <TabsTrigger value="general">{t('workOrders.tabs.general')}</TabsTrigger>
@@ -125,6 +190,22 @@ export function WorkOrderDetailPage(): React.ReactElement {
           <PickListTabWrapper docEntry={workOrder.docEntry} />
         </TabsContent>
       </Tabs>
+
+      {/* Break Reason Modal */}
+      <BreakReasonModal
+        isOpen={isBreakReasonModalOpen}
+        docEntry={workOrder.docEntry}
+        onClose={handleBreakReasonClose}
+        onSuccess={handleBreakReasonSuccess}
+      />
+
+      {/* Production Entry Modal */}
+      <ProductionEntryModal
+        isOpen={isProductionEntryModalOpen}
+        workOrder={workOrder}
+        onClose={handleProductionEntryClose}
+        onSuccess={handleProductionEntrySuccess}
+      />
     </Layout>
   );
 }

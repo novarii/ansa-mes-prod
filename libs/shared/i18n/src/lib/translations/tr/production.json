@@ -32,8 +32,11 @@
   },
   "breakReason": {
     "title": "Dur - Mola Nedeni Secin",
+    "description": "Isi durdurmak icin bir mola nedeni secin",
     "search": "Mola nedeni ara...",
-    "notes": "Notlar",
+    "listLabel": "Mola nedeni listesi",
+    "noResults": "Mola nedeni bulunamadi",
+    "notes": "Aciklama",
     "notesPlaceholder": "Ek aciklama ekleyin (istege bagli)"
   },
   "activity": {
