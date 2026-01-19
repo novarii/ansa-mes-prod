@@ -4,5 +4,9 @@
   "private": true,
   "nx": {
     "tags": ["scope:web"]
+  },
+  "dependencies": {
+    "@org/shared-types": "workspace:*",
+    "@org/shared-i18n": "workspace:*"
   }
 }
