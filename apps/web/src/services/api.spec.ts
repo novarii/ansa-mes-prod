@@ -11,9 +11,18 @@ import { api, ApiRequestError } from './api';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// Mock the AuthContext module
+vi.mock('../context/AuthContext', () => ({
+  getAuthToken: vi.fn(() => null),
+}));
+
+// Import the mocked function for test control
+import { getAuthToken } from '../context/AuthContext';
+
 describe('api', () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    vi.mocked(getAuthToken).mockReturnValue(null);
     vi.useFakeTimers();
   });
 
@@ -104,6 +113,42 @@ describe('api', () => {
       const calledUrl = mockFetch.mock.calls[0][0];
       expect(calledUrl).toContain('station=M001');
       expect(calledUrl).not.toContain('status');
+    });
+
+    it('should include Authorization header when token exists', async () => {
+      vi.mocked(getAuthToken).mockReturnValue('test-token-123');
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' }),
+      });
+
+      await api.get('/auth/stations');
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-token-123',
+          }),
+        })
+      );
+    });
+
+    it('should not include Authorization header when no token exists', async () => {
+      vi.mocked(getAuthToken).mockReturnValue(null);
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ data: 'test' }),
+      });
+
+      await api.get('/test');
+
+      const callArgs = mockFetch.mock.calls[0][1];
+      expect(callArgs.headers).not.toHaveProperty('Authorization');
     });
   });
 

@@ -20,15 +20,17 @@ import { api, ApiRequestError } from '../services/api';
 import type {
   LoginRequest,
   LoginResponse,
+  AuthorizedStationsResponse,
   StationSelectRequest,
   StationSelectResponse,
   StationOption,
 } from '@org/shared-types';
 
 /**
- * Session storage key
+ * Session storage keys
  */
 const SESSION_STORAGE_KEY = 'mes_auth_session';
+const TOKEN_STORAGE_KEY = 'mes_auth_token';
 
 /**
  * Auth session state
@@ -161,6 +163,21 @@ function saveSession(state: AuthState): void {
  */
 function clearSession(): void {
   sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+/**
+ * Save auth token to sessionStorage
+ */
+function saveToken(token: string): void {
+  sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+}
+
+/**
+ * Get auth token from sessionStorage (exported for API client)
+ */
+export function getAuthToken(): string | null {
+  return sessionStorage.getItem(TOKEN_STORAGE_KEY);
 }
 
 /**
@@ -189,7 +206,13 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
     try {
       const request: LoginRequest = { empId, pin };
-      const response = await api.post<LoginResponse>('/auth/login', request);
+      const response = await api.post<LoginResponse & { token: string }>(
+        '/auth/login',
+        request
+      );
+
+      // Store the token for subsequent API calls
+      saveToken(response.token);
 
       setState((prev) => ({
         ...prev,
@@ -218,9 +241,9 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const stations = await api.get<StationOption[]>('/auth/stations');
+      const response = await api.get<AuthorizedStationsResponse>('/auth/stations');
       setState((prev) => ({ ...prev, isLoading: false }));
-      return stations;
+      return response.stations;
     } catch (error) {
       setState((prev) => ({
         ...prev,
@@ -236,10 +259,13 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
     try {
       const request: StationSelectRequest = { stationCode: resCode };
-      const response = await api.post<StationSelectResponse>(
+      const response = await api.post<StationSelectResponse & { token: string }>(
         '/auth/select-station',
         request
       );
+
+      // Store the new token (backend deletes old session and creates new one)
+      saveToken(response.token);
 
       setState((prev) => ({
         ...prev,

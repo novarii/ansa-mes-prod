@@ -8,6 +8,7 @@
  */
 
 import type { ApiError, ApiErrorWithKey } from '@org/shared-types';
+import { getAuthToken } from '../context/AuthContext';
 
 /**
  * API error that extends the standard Error class
@@ -124,6 +125,12 @@ async function request<T>(
     Accept: 'application/json',
     ...headers,
   };
+
+  // Add Authorization header if token exists
+  const token = getAuthToken();
+  if (token) {
+    requestHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   // Don't include Content-Type for GET requests without body
   if (method === 'GET' && !body) {

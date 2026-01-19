@@ -210,6 +210,54 @@ If you see `TS2307: Cannot find module '@org/xxx'`:
 - **Local state with `useState`** - Keep state close to where it's used
 - **Optimize renders** - Use `React.memo`, `useMemo`, `useCallback` where appropriate
 
+## Testing Rules
+
+### Choose the Right Test Type
+
+| Test Type | Use When | Mocking Level |
+|-----------|----------|---------------|
+| **Unit** | Testing pure logic, utilities, single functions | Mock external dependencies |
+| **Integration** | Testing component interactions, data flow between modules | Mock only external services (APIs, DBs) |
+| **E2E** | Testing full user flows, critical paths | No mocking (real backend) |
+
+### When Unit Tests Are NOT Enough
+
+**Use integration tests when:**
+- Testing auth flows (login → token storage → authenticated requests)
+- Testing data flows across multiple components/services
+- Testing that modules integrate correctly (e.g., API client + auth context)
+- The behavior depends on multiple units working together
+
+**Use E2E tests when:**
+- Testing critical user journeys (login, checkout, form submission)
+- Verifying frontend + backend integration
+- Testing browser-specific behavior
+
+### Avoid Mock-Heavy Unit Tests
+
+**Problem:** Mocking everything makes tests pass even when integration is broken.
+
+```typescript
+// BAD: Mocks hide real integration issues
+vi.mock('../api', () => ({ api: { get: vi.fn() } }));
+// This test passes but real code fails because api.get doesn't include auth header
+
+// GOOD: Test actual behavior with minimal mocking
+// Only mock external boundaries (fetch, not internal modules)
+```
+
+**Rules:**
+- Mock at boundaries (network, database, file system), not internal modules
+- If you mock a module, also write an integration test that uses the real module
+- Test mocks should match real API responses (include all fields like `token`)
+- When tests pass but runtime fails, you need integration tests
+
+### Test What Matters
+
+- Test **behavior**, not implementation details
+- Test **edge cases** and error paths
+- Test **integration points** where bugs commonly hide (auth, data serialization, API contracts)
+
 ## Tailwind CSS v4 Rules
 
 > Reference: `specs/ui-component-library.md`

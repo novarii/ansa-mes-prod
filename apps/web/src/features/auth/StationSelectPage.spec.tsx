@@ -108,10 +108,10 @@ describe('StationSelectPage', () => {
       setupAuthenticatedSession();
 
       // Mock stations API
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: true },
         { code: 'M002', name: 'Machine 2', isDefault: false },
-      ]);
+      ] });
 
       renderWithProviders();
 
@@ -124,11 +124,11 @@ describe('StationSelectPage', () => {
     it('should render station list from API', async () => {
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Makine 1', isDefault: false },
         { code: 'M002', name: 'Makine 2', isDefault: true },
         { code: 'M003', name: 'Makine 3', isDefault: false },
-      ]);
+      ] });
 
       renderWithProviders();
 
@@ -143,10 +143,10 @@ describe('StationSelectPage', () => {
     it('should mark default station with badge', async () => {
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: false },
         { code: 'M002', name: 'Machine 2', isDefault: true },
-      ]);
+      ] });
 
       renderWithProviders();
 
@@ -167,9 +167,10 @@ describe('StationSelectPage', () => {
           new Promise((resolve) =>
             setTimeout(
               () =>
-                resolve([
-                  { code: 'M001', name: 'Machine 1', isDefault: false },
-                ]),
+                resolve({
+                  empId: 123,
+                  stations: [{ code: 'M001', name: 'Machine 1', isDefault: false }],
+                }),
               100
             )
           )
@@ -192,10 +193,10 @@ describe('StationSelectPage', () => {
       const user = userEvent.setup();
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: false },
         { code: 'M002', name: 'Machine 2', isDefault: false },
-      ]);
+      ] });
 
       vi.mocked(apiModule.api.post).mockResolvedValueOnce({
         success: true,
@@ -235,9 +236,9 @@ describe('StationSelectPage', () => {
       const user = userEvent.setup();
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: false },
-      ]);
+      ] });
 
       vi.mocked(apiModule.api.post).mockResolvedValueOnce({
         success: true,
@@ -275,9 +276,9 @@ describe('StationSelectPage', () => {
       const user = userEvent.setup();
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: false },
-      ]);
+      ] });
 
       const mockError = new apiModule.ApiRequestError({
         statusCode: 401,
@@ -312,10 +313,10 @@ describe('StationSelectPage', () => {
     it('should pre-select default station', async () => {
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: false },
         { code: 'M002', name: 'Machine 2', isDefault: true },
-      ]);
+      ] });
 
       renderWithProviders();
 
@@ -335,7 +336,7 @@ describe('StationSelectPage', () => {
     it('should show message when user has no authorized stations', async () => {
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([]);
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [] });
 
       renderWithProviders();
 
@@ -372,9 +373,9 @@ describe('StationSelectPage', () => {
     it('should display logged in user name', async () => {
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: false },
-      ]);
+      ] });
 
       renderWithProviders();
 
@@ -389,9 +390,9 @@ describe('StationSelectPage', () => {
       const user = userEvent.setup();
       setupAuthenticatedSession();
 
-      vi.mocked(apiModule.api.get).mockResolvedValueOnce([
+      vi.mocked(apiModule.api.get).mockResolvedValueOnce({ empId: 123, stations: [
         { code: 'M001', name: 'Machine 1', isDefault: false },
-      ]);
+      ] });
 
       vi.mocked(apiModule.api.post).mockResolvedValueOnce({ success: true });
 

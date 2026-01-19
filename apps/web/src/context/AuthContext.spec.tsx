@@ -135,6 +135,7 @@ describe('AuthContext', () => {
         empId: 456,
         empName: 'John Doe',
         stationCount: 2,
+        token: 'test-login-token',
       });
 
       render(
@@ -154,6 +155,33 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('emp-id')).toHaveTextContent('456');
       expect(screen.getByTestId('emp-name')).toHaveTextContent('John Doe');
       expect(screen.getByTestId('is-station-selected')).toHaveTextContent('false');
+    });
+
+    it('should store token in sessionStorage on successful login', async () => {
+      vi.mocked(apiModule.api.post).mockResolvedValueOnce({
+        success: true,
+        empId: 456,
+        empName: 'John Doe',
+        stationCount: 2,
+        token: 'login-token-xyz',
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        screen.getByText('Login').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-authenticated')).toHaveTextContent('true');
+      });
+
+      // Verify token is stored
+      expect(sessionStorage.getItem('mes_auth_token')).toBe('login-token-xyz');
     });
 
     it('should set error state on login failure', async () => {
@@ -194,6 +222,7 @@ describe('AuthContext', () => {
         empId: 123,
         empName: 'Test User',
         stationCount: 1,
+        token: 'login-token',
       });
 
       render(
@@ -221,6 +250,7 @@ describe('AuthContext', () => {
           isDefaultWorker: false,
           loginTime: '2026-01-19T10:00:00Z',
         },
+        token: 'station-token',
       });
 
       await act(async () => {
@@ -233,10 +263,60 @@ describe('AuthContext', () => {
 
       expect(screen.getByTestId('station-code')).toHaveTextContent('M001');
     });
+
+    it('should replace token on successful station selection', async () => {
+      // First login
+      vi.mocked(apiModule.api.post).mockResolvedValueOnce({
+        success: true,
+        empId: 123,
+        empName: 'Test User',
+        stationCount: 1,
+        token: 'old-login-token',
+      });
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      await act(async () => {
+        screen.getByText('Login').click();
+      });
+
+      await waitFor(() => {
+        expect(sessionStorage.getItem('mes_auth_token')).toBe('old-login-token');
+      });
+
+      // Then select station - backend issues new token
+      vi.mocked(apiModule.api.post).mockResolvedValueOnce({
+        success: true,
+        session: {
+          empID: 123,
+          empName: 'Test User',
+          stationCode: 'M001',
+          stationName: 'Machine 1',
+          isDefaultWorker: false,
+          loginTime: '2026-01-19T10:00:00Z',
+        },
+        token: 'new-station-token',
+      });
+
+      await act(async () => {
+        screen.getByText('Select Station').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('is-station-selected')).toHaveTextContent('true');
+      });
+
+      // Verify token was replaced
+      expect(sessionStorage.getItem('mes_auth_token')).toBe('new-station-token');
+    });
   });
 
   describe('logout', () => {
-    it('should clear state and session storage', async () => {
+    it('should clear state and session storage including token', async () => {
       // Start with authenticated state
       sessionStorage.setItem(
         'mes_auth_session',
@@ -249,6 +329,7 @@ describe('AuthContext', () => {
           loginTime: '2026-01-19T10:00:00Z',
         })
       );
+      sessionStorage.setItem('mes_auth_token', 'some-token');
 
       vi.mocked(apiModule.api.post).mockResolvedValueOnce({ success: true });
 
@@ -268,6 +349,7 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('is-station-selected')).toHaveTextContent('false');
       expect(screen.getByTestId('emp-id')).toHaveTextContent('null');
       expect(sessionStorage.getItem('mes_auth_session')).toBeNull();
+      expect(sessionStorage.getItem('mes_auth_token')).toBeNull();
     });
   });
 
