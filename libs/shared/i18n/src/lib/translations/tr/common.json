@@ -54,5 +54,11 @@
     "title": "Onay",
     "delete": "Bu islemi silmek istediginizden emin misiniz?",
     "cancel": "Iptal etmek istediginizden emin misiniz?"
-  }
+  },
+  "noDocuments": "Dokuman bulunamadi",
+  "noDocumentsDescription": "Bu is emri icin yuklu dokuman bulunmamaktadir.",
+  "pdfNotSupported": "PDF goruntulenemedi. Asagidaki baglantidan indirebilirsiniz.",
+  "downloadPdf": "PDF'i indir",
+  "noMaterials": "Malzeme bulunamadi",
+  "noMaterialsDescription": "Bu is emri icin tanimli malzeme bulunmamaktadir."
 }

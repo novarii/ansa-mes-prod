@@ -198,7 +198,8 @@ describe('AppRoutes', () => {
 
     it('should show work order detail at /work-orders/:docEntry', () => {
       renderWithRouter('/work-orders/123');
-      expect(screen.getByTestId('work-order-detail-page')).toBeInTheDocument();
+      // The component shows loading state initially since we don't mock the detail endpoint
+      expect(screen.getByTestId('work-order-detail-loading')).toBeInTheDocument();
     });
 
     it('should show team page at /team', () => {

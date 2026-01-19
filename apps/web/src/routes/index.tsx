@@ -10,11 +10,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ComponentShowcase } from '../features/dev/ComponentShowcase';
 import { LoginPage, StationSelectPage } from '../features/auth';
-import { WorkOrderListPage } from '../features/work-orders';
-
-function WorkOrderDetailPage(): JSX.Element {
-  return <div data-testid="work-order-detail-page">Work Order Detail Page (Phase 15)</div>;
-}
+import { WorkOrderListPage, WorkOrderDetailPage } from '../features/work-orders';
 
 function TeamPage(): JSX.Element {
   return <div data-testid="team-page">Team Page (Phase 17)</div>;
