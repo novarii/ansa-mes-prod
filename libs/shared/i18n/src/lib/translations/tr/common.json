@@ -15,8 +15,12 @@
     "refresh": "Yenile",
     "retry": "Tekrar Dene",
     "login": "Giris Yap",
-    "logout": "Cikis"
+    "logout": "Cikis",
+    "loadMore": "Daha Fazla Yukle"
   },
+  "all": "Tumu",
+  "activeFilters": "Aktif filtreler:",
+  "filtered": "(filtrelenmis)",
   "status": {
     "loading": "Yukleniyor...",
     "error": "Hata",

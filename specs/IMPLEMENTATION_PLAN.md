@@ -778,9 +778,13 @@ Location: `apps/web/src/features/auth/StationSelectPage.tsx`
 
 ---
 
-## Phase 14: Work Order List Page
+## Phase 14: Work Order List Page ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 40 tests passing (WorkOrderListPage: 21, WorkOrderCard: 19)
+**Components:** WorkOrderListPage, WorkOrderCard
+**Route:** `/` (home page for authenticated users with station)
 
 > Reference: `specs/feature-production.md`
 

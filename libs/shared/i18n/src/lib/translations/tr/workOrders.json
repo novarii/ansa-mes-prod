@@ -1,5 +1,8 @@
 {
   "title": "Is Emirleri",
+  "count": "is emri",
+  "noResults": "Is emri bulunamadi",
+  "tryDifferentFilters": "Farkli filtreler deneyebilirsiniz",
   "detail": {
     "code": "Is Emri Kodu",
     "title": "Baslik",
