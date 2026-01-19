@@ -13,8 +13,9 @@
     "next": "Ileri",
     "submit": "Gonder",
     "refresh": "Yenile",
+    "retry": "Tekrar Dene",
     "login": "Giris Yap",
-    "logout": "Cikis Yap"
+    "logout": "Cikis"
   },
   "status": {
     "loading": "Yukleniyor...",

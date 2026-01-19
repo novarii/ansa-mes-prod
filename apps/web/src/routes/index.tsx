@@ -9,17 +9,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ComponentShowcase } from '../features/dev/ComponentShowcase';
-
-/**
- * Placeholder components - will be implemented in later phases
- */
-function LoginPage(): JSX.Element {
-  return <div data-testid="login-page">Login Page (Phase 13)</div>;
-}
-
-function StationSelectPage(): JSX.Element {
-  return <div data-testid="station-select-page">Station Select Page (Phase 13)</div>;
-}
+import { LoginPage, StationSelectPage } from '../features/auth';
 
 function WorkOrderListPage(): JSX.Element {
   return <div data-testid="work-order-list-page">Work Order List Page (Phase 14)</div>;

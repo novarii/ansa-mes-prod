@@ -5,9 +5,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AppRoutes } from './index';
+import { I18nProvider } from '@org/shared-i18n';
 import * as AuthContext from '../context/AuthContext';
 
 // Mock the auth context
@@ -19,7 +20,9 @@ vi.mock('../context/AuthContext', () => ({
 function renderWithRouter(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
+      <I18nProvider>
+        <AppRoutes />
+      </I18nProvider>
     </MemoryRouter>
   );
 }
@@ -95,31 +98,41 @@ describe('AppRoutes', () => {
         isLoading: false,
         error: null,
         login: vi.fn(),
-        getAuthorizedStations: vi.fn(),
+        getAuthorizedStations: vi.fn().mockResolvedValue([
+          { code: 'M001', name: 'Machine 1', isDefault: false },
+        ]),
         selectStation: vi.fn(),
         logout: vi.fn(),
         clearError: vi.fn(),
       });
     });
 
-    it('should show station select page at /select-station', () => {
+    it('should show station select page at /select-station', async () => {
       renderWithRouter('/select-station');
-      expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      });
     });
 
-    it('should redirect to station select from /', () => {
+    it('should redirect to station select from /', async () => {
       renderWithRouter('/');
-      expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      });
     });
 
-    it('should redirect to station select from /login', () => {
+    it('should redirect to station select from /login', async () => {
       renderWithRouter('/login');
-      expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      });
     });
 
-    it('should redirect to station select from /team', () => {
+    it('should redirect to station select from /team', async () => {
       renderWithRouter('/team');
-      expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('station-select-page')).toBeInTheDocument();
+      });
     });
   });
 
