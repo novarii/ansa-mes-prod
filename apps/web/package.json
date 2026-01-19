@@ -3,10 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["scope:web"]
+    "tags": [
+      "scope:web"
+    ]
   },
   "dependencies": {
-    "@org/shared-types": "workspace:*",
-    "@org/shared-i18n": "workspace:*"
+    "@org/shared-i18n": "workspace:*",
+    "@org/shared-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@testing-library/user-event": "^14.6.1"
   }
 }
