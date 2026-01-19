@@ -1,7 +1,7 @@
 /**
  * Component Showcase - Dev Page
  *
- * A simple page to preview all UI components.
+ * Preview all shadcn/ui components with Tailwind CSS v4.
  * Access at /dev/components
  */
 
@@ -9,270 +9,342 @@ import React, { useState } from 'react';
 import {
   Button,
   Input,
-  Modal,
-  Table,
+  Label,
   Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+  Badge,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Separator,
+  Alert,
+  AlertTitle,
+  AlertDescription,
   Spinner,
   PageHeader,
-  FormField,
-  Select,
-  SearchInput,
 } from '../../components';
-import './ComponentShowcase.scss';
-
-interface DemoRow {
-  id: number;
-  name: string;
-  status: string;
-  quantity: number;
-}
-
-const demoData: DemoRow[] = [
-  { id: 1, name: 'Work Order 001', status: 'Active', quantity: 1500 },
-  { id: 2, name: 'Work Order 002', status: 'Pending', quantity: 2300 },
-  { id: 3, name: 'Work Order 003', status: 'Completed', quantity: 800 },
-];
-
-const selectOptions = [
-  { value: 'machine1', label: 'Makine 1' },
-  { value: 'machine2', label: 'Makine 2' },
-  { value: 'machine3', label: 'Makine 3' },
-];
+import { cn } from '@/lib/utils';
 
 export function ComponentShowcase(): React.ReactElement {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [inputValue, setInputValue] = useState('');
-  const [selectValue, setSelectValue] = useState('');
-  const [searchValue, setSearchValue] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <div className="showcase">
+    <div className="min-h-screen bg-background p-8">
       <PageHeader
         title="Component Showcase"
-        subtitle="Preview all UI components"
-        actions={<Button variant="primary">Action Button</Button>}
+        subtitle="shadcn/ui + Tailwind CSS v4"
       />
 
-      {/* Buttons Section */}
-      <section className="showcase__section">
-        <h2>Buttons</h2>
-        <div className="showcase__row">
-          <Button variant="primary">Primary</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="danger">Danger</Button>
-          <Button variant="ghost">Ghost</Button>
-        </div>
-        <div className="showcase__row">
-          <Button size="small">Small</Button>
-          <Button size="medium">Medium</Button>
-          <Button size="large">Large</Button>
-        </div>
-        <div className="showcase__row">
-          <Button loading>Loading</Button>
-          <Button disabled>Disabled</Button>
-          <Button fullWidth>Full Width</Button>
-        </div>
-      </section>
-
-      {/* Inputs Section */}
-      <section className="showcase__section">
-        <h2>Inputs</h2>
-        <div className="showcase__grid">
-          <FormField label="Text Input" htmlFor="text-input">
-            <Input
-              id="text-input"
-              placeholder="Enter text..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-            />
-          </FormField>
-          <FormField label="With Error" htmlFor="error-input" error="Bu alan zorunludur">
-            <Input id="error-input" error placeholder="Error state" />
-          </FormField>
-          <FormField label="Disabled" htmlFor="disabled-input">
-            <Input id="disabled-input" disabled placeholder="Disabled" />
-          </FormField>
-          <FormField label="Number Input" htmlFor="number-input" helpText="Turkish number format">
-            <Input id="number-input" type="number" placeholder="0" />
-          </FormField>
-        </div>
-      </section>
-
-      {/* Select Section */}
-      <section className="showcase__section">
-        <h2>Select</h2>
-        <div className="showcase__grid">
-          <FormField label="Machine Selection" htmlFor="select-demo">
-            <Select
-              id="select-demo"
-              options={selectOptions}
-              placeholder="Makine secin..."
-              value={selectValue}
-              onChange={(e) => setSelectValue(e.target.value)}
-              fullWidth
-            />
-          </FormField>
-          <FormField label="With Error" htmlFor="select-error" error="Secim yapiniz">
-            <Select
-              id="select-error"
-              options={selectOptions}
-              placeholder="Select..."
-              error
-              fullWidth
-            />
-          </FormField>
-        </div>
-      </section>
-
-      {/* Search Input Section */}
-      <section className="showcase__section">
-        <h2>Search Input</h2>
-        <div className="showcase__grid">
-          <div>
-            <p className="showcase__label">Default</p>
-            <SearchInput
-              onSearch={(v) => console.log('Search:', v)}
-              placeholder="Tabloda Ara..."
-            />
+      <div className="space-y-12 max-w-5xl">
+        {/* Buttons */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Buttons</h2>
+          <div className="flex flex-wrap gap-3">
+            <Button>Default</Button>
+            <Button variant="secondary">Secondary</Button>
+            <Button variant="destructive">Destructive</Button>
+            <Button variant="outline">Outline</Button>
+            <Button variant="ghost">Ghost</Button>
+            <Button variant="link">Link</Button>
           </div>
-          <div>
-            <p className="showcase__label">Loading</p>
-            <SearchInput
-              onSearch={() => {}}
-              placeholder="Searching..."
-              loading
-            />
+          <div className="flex flex-wrap gap-3">
+            <Button size="sm">Small</Button>
+            <Button size="default">Default</Button>
+            <Button size="lg">Large</Button>
+            <Button size="icon">🔥</Button>
           </div>
-        </div>
-        {searchValue && <p>Searched: {searchValue}</p>}
-      </section>
+          <div className="flex flex-wrap gap-3">
+            <Button disabled>Disabled</Button>
+            <Button variant="success">Success</Button>
+            <Button variant="warning">Warning</Button>
+          </div>
+        </section>
 
-      {/* Cards Section */}
-      <section className="showcase__section">
-        <h2>Cards</h2>
-        <div className="showcase__grid">
-          <Card title="Basic Card" subtitle="With subtitle">
-            <p>Card content goes here. This is a basic card with title and subtitle.</p>
+        <Separator />
+
+        {/* Inputs */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Inputs</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+            <div className="space-y-2">
+              <Label htmlFor="default">Default Input</Label>
+              <Input id="default" placeholder="Enter text..." />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="disabled">Disabled</Label>
+              <Input id="disabled" disabled placeholder="Disabled" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="error">With Error</Label>
+              <Input id="error" aria-invalid="true" placeholder="Error state" />
+              <p className="text-sm text-destructive">Bu alan zorunludur</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="number">Number</Label>
+              <Input id="number" type="number" placeholder="0" />
+            </div>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Select */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Select</h2>
+          <div className="max-w-xs">
+            <Label>Machine Selection</Label>
+            <Select>
+              <SelectTrigger className="mt-2">
+                <SelectValue placeholder="Makine secin..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="machine1">Makine 1</SelectItem>
+                <SelectItem value="machine2">Makine 2</SelectItem>
+                <SelectItem value="machine3">Makine 3</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Cards */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Cards</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Card</CardTitle>
+                <CardDescription>With title and description</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Card content goes here. This is a basic card.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>With Footer</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  This card has a footer with actions.
+                </p>
+              </CardContent>
+              <CardFooter className="gap-2">
+                <Button variant="outline" size="sm">Cancel</Button>
+                <Button size="sm">Save</Button>
+              </CardFooter>
+            </Card>
+
+            <Card className="cursor-pointer hover:shadow-md transition-shadow">
+              <CardHeader>
+                <CardTitle>Clickable Card</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  This card has hover effects.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Table */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Table</h2>
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-20">ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="font-medium">001</TableCell>
+                  <TableCell>Work Order Alpha</TableCell>
+                  <TableCell><Badge>Active</Badge></TableCell>
+                  <TableCell className="text-right">1,500</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">002</TableCell>
+                  <TableCell>Work Order Beta</TableCell>
+                  <TableCell><Badge variant="secondary">Pending</Badge></TableCell>
+                  <TableCell className="text-right">2,300</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium">003</TableCell>
+                  <TableCell>Work Order Gamma</TableCell>
+                  <TableCell><Badge variant="outline">Completed</Badge></TableCell>
+                  <TableCell className="text-right">800</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </Card>
-          <Card
-            title="Card with Actions"
-            headerActions={<Button size="small" variant="ghost">Edit</Button>}
-            footer={<span>Footer content</span>}
-          >
-            <p>This card has header actions and a footer.</p>
-          </Card>
-          <Card
-            title="Clickable Card"
-            onClick={() => alert('Card clicked!')}
-          >
-            <p>Click me! I have hover effects.</p>
-          </Card>
-        </div>
-      </section>
+        </section>
 
-      {/* Table Section */}
-      <section className="showcase__section">
-        <h2>Table</h2>
-        <Table
-          columns={[
-            { key: 'id', header: 'ID', width: '80px' },
-            { key: 'name', header: 'Name' },
-            { key: 'status', header: 'Status', align: 'center' },
-            { key: 'quantity', header: 'Quantity', align: 'right' },
-          ]}
-          data={demoData}
-        />
-        <h3 style={{ marginTop: '1rem' }}>Loading State</h3>
-        <Table
-          columns={[
-            { key: 'id', header: 'ID' },
-            { key: 'name', header: 'Name' },
-          ]}
-          data={demoData}
-          loading
-        />
-        <h3 style={{ marginTop: '1rem' }}>Empty State</h3>
-        <Table
-          columns={[
-            { key: 'id', header: 'ID' },
-            { key: 'name', header: 'Name' },
-          ]}
-          data={[]}
-          emptyMessage="Veri bulunamadi"
-        />
-      </section>
+        <Separator />
 
-      {/* Spinners Section */}
-      <section className="showcase__section">
-        <h2>Spinners</h2>
-        <div className="showcase__row">
-          <div className="showcase__spinner-demo">
-            <Spinner size="small" />
-            <span>Small</span>
+        {/* Badges */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Badges</h2>
+          <div className="flex flex-wrap gap-3">
+            <Badge>Default</Badge>
+            <Badge variant="secondary">Secondary</Badge>
+            <Badge variant="destructive">Destructive</Badge>
+            <Badge variant="outline">Outline</Badge>
           </div>
-          <div className="showcase__spinner-demo">
-            <Spinner size="medium" />
-            <span>Medium</span>
-          </div>
-          <div className="showcase__spinner-demo">
-            <Spinner size="large" />
-            <span>Large</span>
-          </div>
-        </div>
-        <div className="showcase__row">
-          <Spinner showLabel label="Yukleniyor..." />
-        </div>
-        <div className="showcase__dark-bg">
-          <Spinner color="white" showLabel label="White spinner on dark" />
-        </div>
-      </section>
+        </section>
 
-      {/* Modal Section */}
-      <section className="showcase__section">
-        <h2>Modal</h2>
-        <Button onClick={() => setModalOpen(true)}>Open Modal</Button>
-        <Modal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title="Example Modal"
-          size="medium"
-        >
-          <p>This is modal content. You can put any content here.</p>
-          <p>Click outside or press Escape to close.</p>
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>
-              Iptal
-            </Button>
-            <Button variant="primary" onClick={() => setModalOpen(false)}>
-              Kaydet
-            </Button>
-          </div>
-        </Modal>
-      </section>
+        <Separator />
 
-      {/* Page Header Variants */}
-      <section className="showcase__section">
-        <h2>Page Header Variants</h2>
-        <Card padding="none" noShadow>
-          <PageHeader
-            title="With Back Button"
-            subtitle="And a subtitle"
-            backTo="/dev/components"
-            backLabel="Geri"
-          />
-        </Card>
-        <Card padding="none" noShadow style={{ marginTop: '1rem' }}>
-          <PageHeader
-            title="With Actions"
-            actions={
-              <>
-                <Button variant="secondary" size="small">Cancel</Button>
-                <Button variant="primary" size="small">Save</Button>
-              </>
-            }
-          />
-        </Card>
-      </section>
+        {/* Tabs */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Tabs</h2>
+          <Tabs defaultValue="tab1" className="max-w-md">
+            <TabsList>
+              <TabsTrigger value="tab1">Detaylar</TabsTrigger>
+              <TabsTrigger value="tab2">Uretim</TabsTrigger>
+              <TabsTrigger value="tab3">Gecmis</TabsTrigger>
+            </TabsList>
+            <TabsContent value="tab1" className="p-4 border rounded-b-lg">
+              <p className="text-sm text-muted-foreground">Tab 1 content - Work order details</p>
+            </TabsContent>
+            <TabsContent value="tab2" className="p-4 border rounded-b-lg">
+              <p className="text-sm text-muted-foreground">Tab 2 content - Production entries</p>
+            </TabsContent>
+            <TabsContent value="tab3" className="p-4 border rounded-b-lg">
+              <p className="text-sm text-muted-foreground">Tab 3 content - History</p>
+            </TabsContent>
+          </Tabs>
+        </section>
+
+        <Separator />
+
+        {/* Alerts */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Alerts</h2>
+          <div className="space-y-3 max-w-xl">
+            <Alert>
+              <AlertTitle>Bilgi</AlertTitle>
+              <AlertDescription>
+                Bu bir bilgi mesajidir.
+              </AlertDescription>
+            </Alert>
+            <Alert variant="destructive">
+              <AlertTitle>Hata</AlertTitle>
+              <AlertDescription>
+                Bir hata olustu. Lutfen tekrar deneyin.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Spinners */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Spinners</h2>
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col items-center gap-2">
+              <Spinner size="sm" />
+              <span className="text-xs text-muted-foreground">Small</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <Spinner />
+              <span className="text-xs text-muted-foreground">Default</span>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <Spinner size="lg" />
+              <span className="text-xs text-muted-foreground">Large</span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Spinner showLabel label="Yukleniyor..." />
+          </div>
+        </section>
+
+        <Separator />
+
+        {/* Dialog */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Dialog</h2>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>Open Dialog</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Example Dialog</DialogTitle>
+                <DialogDescription>
+                  This is a shadcn/ui dialog component. Click outside or press Escape to close.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="text-sm text-muted-foreground">
+                  Dialog content goes here. You can put forms, confirmations, or any content.
+                </p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Iptal
+                </Button>
+                <Button onClick={() => setDialogOpen(false)}>
+                  Kaydet
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </section>
+
+        <Separator />
+
+        {/* Color Palette */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Color Palette</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="p-4 rounded-lg bg-primary text-primary-foreground text-center text-sm">Primary</div>
+            <div className="p-4 rounded-lg bg-secondary text-secondary-foreground text-center text-sm">Secondary</div>
+            <div className="p-4 rounded-lg bg-destructive text-destructive-foreground text-center text-sm">Destructive</div>
+            <div className="p-4 rounded-lg bg-muted text-muted-foreground text-center text-sm">Muted</div>
+            <div className="p-4 rounded-lg bg-accent text-accent-foreground text-center text-sm">Accent</div>
+            <div className="p-4 rounded-lg bg-success text-success-foreground text-center text-sm">Success</div>
+            <div className="p-4 rounded-lg bg-warning text-warning-foreground text-center text-sm">Warning</div>
+            <div className="p-4 rounded-lg bg-card text-card-foreground border text-center text-sm">Card</div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

@@ -90,3 +90,14 @@ export type { FormFieldProps } from './FormField/FormField';
 
 export { SearchInput } from './SearchInput/SearchInput';
 export type { SearchInputProps } from './SearchInput/SearchInput';
+
+// Legacy components (for backward compatibility - prefer shadcn equivalents for new code)
+export { Button as LegacyButton } from './Button/Button';
+export { Input as LegacyInput } from './Input/Input';
+export { Card as LegacyCard } from './Card/Card';
+export { Modal } from './Modal/Modal';
+export type { ModalProps, ModalSize } from './Modal/Modal';
+export { Table as LegacyTable } from './Table/Table';
+export type { TableProps, TableColumn, TableAlignment } from './Table/Table';
+export { Select as LegacySelect } from './Select/Select';
+export type { SelectProps, SelectOption } from './Select/Select';
