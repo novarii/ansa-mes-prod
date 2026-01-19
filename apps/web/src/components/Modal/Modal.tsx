@@ -1,13 +1,16 @@
 /**
- * Modal Component
+ * Modal Component (Legacy)
  *
  * An overlay dialog component with close handling and backdrop support.
  * Renders via React Portal for proper z-index stacking.
+ *
+ * @deprecated Prefer using the shadcn Dialog from './ui/dialog' for new code.
  */
 
 import React, { useEffect, useId, useCallback, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import './Modal.scss';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export type ModalSize = 'small' | 'medium' | 'large';
 
@@ -27,6 +30,12 @@ export interface ModalProps {
   /** Close when Escape key is pressed (default: true) */
   closeOnEscape?: boolean;
 }
+
+const sizeStyles: Record<ModalSize, string> = {
+  small: 'max-w-sm modal__container--small',
+  medium: 'max-w-lg modal__container--medium',
+  large: 'max-w-2xl modal__container--large',
+};
 
 /**
  * Modal component for overlay dialogs.
@@ -99,47 +108,38 @@ export function Modal({
   }
 
   const modalContent = (
-    <div className="modal">
+    <div className="fixed inset-0 z-50">
       <div
-        className="modal__backdrop"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
         data-testid="modal-backdrop"
         onClick={handleBackdropClick}
       >
         <div
-          className={`modal__container modal__container--${size}`}
+          className={cn(
+            'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full rounded-lg border bg-background shadow-lg',
+            sizeStyles[size]
+          )}
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="modal__header">
+          <div className="flex items-center justify-between border-b p-4">
             {title && (
-              <h2 id={titleId} className="modal__title">
+              <h2 id={titleId} className="text-lg font-semibold">
                 {title}
               </h2>
             )}
             <button
               type="button"
-              className="modal__close"
+              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               onClick={onClose}
               aria-label="Close modal"
             >
-              <svg
-                className="modal__close-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <X className="size-4" aria-hidden="true" />
             </button>
           </div>
-          <div className="modal__body">{children}</div>
+          <div className="p-4">{children}</div>
         </div>
       </div>
     </div>

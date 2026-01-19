@@ -4,8 +4,17 @@
  * A debounced search input with clear button and loading state.
  */
 
-import React, { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react';
-import './SearchInput.scss';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  ChangeEvent,
+} from 'react';
+import { Search, X, Loader2 } from 'lucide-react';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 
 export interface SearchInputProps {
   /** Callback called with search value after debounce */
@@ -50,7 +59,7 @@ export function SearchInput({
   debounceMs = 300,
   loading = false,
   disabled = false,
-  className = '',
+  className,
   'aria-label': ariaLabel,
   'data-testid': dataTestId,
 }: SearchInputProps): React.ReactElement {
@@ -112,51 +121,30 @@ export function SearchInput({
     inputRef.current?.focus();
   };
 
-  const displayValue = controlledValue !== undefined ? controlledValue : internalValue;
+  const displayValue =
+    controlledValue !== undefined ? controlledValue : internalValue;
   const showClear = displayValue.length > 0 && !disabled;
 
-  const classNames = ['search-input', className].filter(Boolean).join(' ');
-
   return (
-    <div className={classNames} data-testid={dataTestId}>
-      <div
-        className={`search-input__icon ${loading ? 'search-input__icon--hidden' : ''}`}
-        aria-hidden="true"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
+    <div
+      className={cn('relative flex items-center', className)}
+      data-testid={dataTestId}
+    >
+      <div className="pointer-events-none absolute left-3 flex items-center">
+        {loading ? (
+          <Loader2
+            className="size-4 animate-spin text-muted-foreground"
+            aria-hidden="true"
+          />
+        ) : (
+          <Search className="size-4 text-muted-foreground" aria-hidden="true" />
+        )}
       </div>
 
-      {loading && (
-        <div className="search-input__loading" aria-hidden="true">
-          <svg className="search-input__spinner" viewBox="0 0 24 24">
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeDasharray="31.4"
-              strokeDashoffset="15.7"
-            />
-          </svg>
-        </div>
-      )}
-
-      <input
+      <Input
         ref={inputRef}
         type="search"
-        className="search-input__input"
+        className="pl-9 pr-9"
         value={displayValue}
         onChange={handleChange}
         placeholder={placeholder}
@@ -165,24 +153,16 @@ export function SearchInput({
       />
 
       {showClear && (
-        <button
+        <Button
           type="button"
-          className="search-input__clear"
+          variant="ghost"
+          size="icon"
+          className="absolute right-1 size-7"
           onClick={handleClear}
           aria-label="Temizle"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+          <X className="size-4" />
+        </Button>
       )}
     </div>
   );

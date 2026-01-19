@@ -1,11 +1,13 @@
 /**
- * Table Component
+ * Table Component (Legacy)
  *
  * A basic table component with loading state and custom cell rendering support.
+ *
+ * @deprecated Prefer using the shadcn Table from './ui/table' for new code.
  */
 
 import React, { ReactNode, TableHTMLAttributes } from 'react';
-import './Table.scss';
+import { cn } from '@/lib/utils';
 
 export type TableAlignment = 'left' | 'center' | 'right';
 
@@ -35,6 +37,12 @@ export interface TableProps<T>
   /** Function to extract unique key from row */
   keyExtractor?: (row: T, index: number) => string;
 }
+
+const alignStyles: Record<TableAlignment, string> = {
+  left: 'text-left table__cell--left',
+  center: 'text-center table__cell--center',
+  right: 'text-right table__cell--right',
+};
 
 /**
  * Table component for displaying tabular data.
@@ -73,17 +81,18 @@ export function Table<T extends Record<string, unknown>>({
     return String(index);
   };
 
-  const classNames = ['table-container', className].filter(Boolean).join(' ');
-
   return (
-    <div className={classNames}>
-      <table className="table" {...props}>
-        <thead className="table__head">
-          <tr className="table__row">
+    <div className={cn('relative w-full overflow-auto', className)}>
+      <table className="w-full caption-bottom text-sm" {...props}>
+        <thead className="[&_tr]:border-b">
+          <tr className="border-b transition-colors hover:bg-muted/50">
             {columns.map((column) => (
               <th
                 key={String(column.key)}
-                className={`table__header table__cell--${column.align || 'left'}`}
+                className={cn(
+                  'h-10 px-2 font-medium text-muted-foreground',
+                  alignStyles[column.align || 'left']
+                )}
                 style={column.width ? { width: column.width } : undefined}
               >
                 {column.header}
@@ -91,22 +100,28 @@ export function Table<T extends Record<string, unknown>>({
             ))}
           </tr>
         </thead>
-        <tbody className="table__body">
+        <tbody className="[&_tr:last-child]:border-0">
           {data.length === 0 && !loading ? (
-            <tr className="table__row table__row--empty">
-              <td className="table__cell table__cell--empty" colSpan={columns.length}>
+            <tr className="border-b transition-colors table__row--empty">
+              <td
+                className="p-2 align-middle text-center text-muted-foreground table__cell--empty"
+                colSpan={columns.length}
+              >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             data.map((row, rowIndex) => (
-              <tr key={getRowKey(row, rowIndex)} className="table__row">
+              <tr
+                key={getRowKey(row, rowIndex)}
+                className="border-b transition-colors hover:bg-muted/50"
+              >
                 {columns.map((column) => {
                   const value = row[column.key];
                   return (
                     <td
                       key={String(column.key)}
-                      className={`table__cell table__cell--${column.align || 'left'}`}
+                      className={cn('p-2 align-middle', alignStyles[column.align || 'left'])}
                     >
                       {column.render
                         ? column.render(value, row, rowIndex)
@@ -121,8 +136,8 @@ export function Table<T extends Record<string, unknown>>({
       </table>
 
       {loading && (
-        <div className="table__loading">
-          <span className="table__loading-text">Yukleniyor...</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+          <span className="text-sm text-muted-foreground">Yukleniyor...</span>
         </div>
       )}
     </div>

@@ -1,13 +1,15 @@
 /**
- * Input Component
+ * Input Component (Legacy)
  *
  * A text/number input component with Turkish number formatting support.
  * Supports error states and various input types.
+ *
+ * @deprecated Prefer using the shadcn Input from './ui/input' for new code.
  */
 
 import React, { InputHTMLAttributes, forwardRef, ChangeEvent } from 'react';
 import { useI18n } from '@org/shared-i18n';
-import './Input.scss';
+import { cn } from '@/lib/utils';
 
 export interface InputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
@@ -60,10 +62,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 ): React.ReactElement {
   const { parseNumber } = useI18n();
 
-  const classNames = ['input', error && 'input--error', className]
-    .filter(Boolean)
-    .join(' ');
-
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     if (onChange) {
       onChange(event);
@@ -91,7 +89,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <input
       ref={ref}
       type={type}
-      className={classNames}
+      className={cn(
+        'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+        error && 'border-destructive focus-visible:ring-destructive input--error',
+        className
+      )}
       disabled={disabled}
       readOnly={readOnly}
       aria-invalid={error ? 'true' : undefined}

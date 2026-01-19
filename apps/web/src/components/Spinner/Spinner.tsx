@@ -1,11 +1,13 @@
 /**
- * Spinner Component
+ * Spinner Component (Legacy)
  *
  * A loading indicator component with size and color variants.
+ *
+ * @deprecated Prefer using the shadcn Spinner from './ui/spinner' for new code.
  */
 
 import React, { HTMLAttributes } from 'react';
-import './Spinner.scss';
+import { cn } from '@/lib/utils';
 
 export type SpinnerSize = 'small' | 'medium' | 'large';
 export type SpinnerColor = 'primary' | 'white' | 'inherit';
@@ -22,6 +24,18 @@ export interface SpinnerProps extends HTMLAttributes<HTMLDivElement> {
   /** Custom label text */
   label?: string;
 }
+
+const sizeStyles: Record<SpinnerSize, string> = {
+  small: 'size-4 spinner--small',
+  medium: 'size-6 spinner--medium',
+  large: 'size-8 spinner--large',
+};
+
+const colorStyles: Record<SpinnerColor, string> = {
+  primary: 'text-primary spinner--primary',
+  white: 'text-white spinner--white',
+  inherit: 'text-current spinner--inherit',
+};
 
 /**
  * Spinner component for loading states.
@@ -47,54 +61,43 @@ export function Spinner({
   className = '',
   ...props
 }: SpinnerProps): React.ReactElement {
-  const spinnerClassNames = [
-    'spinner',
-    `spinner--${size}`,
-    `spinner--${color}`,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   const spinner = (
     <div
-      className={spinnerClassNames}
+      className={cn('inline-flex items-center gap-2', className)}
       role="status"
       aria-live="polite"
       {...props}
     >
       <svg
-        className="spinner__icon"
+        className={cn('animate-spin', sizeStyles[size], colorStyles[color])}
         viewBox="0 0 24 24"
         fill="none"
         aria-hidden="true"
       >
         <circle
-          className="spinner__track"
+          className="opacity-25"
           cx="12"
           cy="12"
           r="10"
           stroke="currentColor"
           strokeWidth="3"
         />
-        <circle
-          className="spinner__circle"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         />
       </svg>
-      <span className={showLabel ? 'spinner__label' : 'spinner__sr-only'}>
-        {label}
-      </span>
+      <span className={showLabel ? 'text-sm' : 'sr-only'}>{label}</span>
     </div>
   );
 
   if (centered) {
-    return <div className="spinner-container--centered">{spinner}</div>;
+    return (
+      <div className="flex min-h-[200px] items-center justify-center spinner-container--centered">
+        {spinner}
+      </div>
+    );
   }
 
   return spinner;

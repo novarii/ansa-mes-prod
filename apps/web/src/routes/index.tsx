@@ -8,6 +8,7 @@
 
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { ComponentShowcase } from '../features/dev/ComponentShowcase';
 
 /**
  * Placeholder components - will be implemented in later phases
@@ -106,6 +107,9 @@ export function AppRoutes(): JSX.Element {
         <Route path="/team" element={<TeamPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
       </Route>
+
+      {/* Dev routes (no auth required) */}
+      <Route path="/dev/components" element={<ComponentShowcase />} />
 
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/" replace />} />

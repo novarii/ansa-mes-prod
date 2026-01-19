@@ -6,7 +6,7 @@
 
 import React, { ReactNode } from 'react';
 import { NavBar } from '../NavBar/NavBar';
-import './Layout.scss';
+import { cn } from '@/lib/utils';
 
 export interface LayoutProps {
   /** Page content */
@@ -26,13 +26,11 @@ export interface LayoutProps {
  * </Layout>
  * ```
  */
-export function Layout({ children, className = '' }: LayoutProps): React.ReactElement {
-  const classNames = ['layout', className].filter(Boolean).join(' ');
-
+export function Layout({ children, className }: LayoutProps): React.ReactElement {
   return (
-    <div className={classNames}>
+    <div className={cn('min-h-screen bg-background', className)}>
       <NavBar />
-      <main className="layout__main">{children}</main>
+      <main className="container mx-auto px-4 py-6">{children}</main>
     </div>
   );
 }

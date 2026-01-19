@@ -70,17 +70,19 @@ bootstrap();
 
 ## Vite Configuration
 
-The web application uses Vite v6 with SWC for fast compilation and WebSocket proxy support for real-time features.
+The web application uses Vite with SWC for fast compilation, Tailwind CSS v4, and WebSocket proxy support for real-time features.
 
 ```typescript
 // apps/web/vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+import tailwindcss from '@tailwindcss/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   plugins: [
     react(),          // SWC for faster compilation
+    tailwindcss(),    // Tailwind CSS v4 (no postcss.config.js needed)
     tsconfigPaths(),  // Sync Nx path aliases
   ],
 
@@ -122,6 +124,7 @@ export default defineConfig({
 | Dev server port | `3001` | Frontend development server |
 | API proxy target | `localhost:3000` | Proxy API requests to NestJS |
 | SWC plugin | `@vitejs/plugin-react-swc` | Faster compilation than Babel |
+| Tailwind plugin | `@tailwindcss/vite` | Tailwind CSS v4 (replaces PostCSS) |
 | Path aliases | `vite-tsconfig-paths` | Sync with Nx monorepo aliases |
 
 ---

@@ -1,12 +1,14 @@
 /**
- * Card Component
+ * Card Component (Legacy)
  *
  * A container component for grouping related content.
  * Supports header, body, footer, and clickable variants.
+ *
+ * @deprecated Prefer using the shadcn Card from './ui/card' for new code.
  */
 
 import React, { HTMLAttributes, ReactNode, KeyboardEvent } from 'react';
-import './Card.scss';
+import { cn } from '@/lib/utils';
 
 export type CardPadding = 'none' | 'compact' | 'default';
 
@@ -30,6 +32,12 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** Card content */
   children: ReactNode;
 }
+
+const paddingStyles: Record<CardPadding, string> = {
+  none: '',
+  compact: 'p-3',
+  default: 'p-6',
+};
 
 /**
  * Card component for grouping content.
@@ -60,17 +68,6 @@ export function Card({
 }: CardProps): React.ReactElement {
   const isClickable = Boolean(onClick);
 
-  const classNames = [
-    'card',
-    `card--padding-${padding}`,
-    noBorder && 'card--no-border',
-    noShadow && 'card--no-shadow',
-    isClickable && 'card--clickable',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (isClickable && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault();
@@ -82,7 +79,14 @@ export function Card({
 
   return (
     <div
-      className={classNames}
+      className={cn(
+        'rounded-xl bg-card text-card-foreground',
+        !noBorder && 'border card--border',
+        !noShadow && 'shadow-xs card--shadow',
+        isClickable && 'cursor-pointer hover:shadow-md transition-shadow card--clickable',
+        `card--padding-${padding}`,
+        className
+      )}
       onClick={onClick}
       onKeyDown={handleKeyDown}
       role={isClickable ? 'button' : undefined}
@@ -90,16 +94,20 @@ export function Card({
       {...props}
     >
       {hasHeader && (
-        <div className="card__header">
-          <div className="card__header-content">
-            {title && <h3 className="card__title">{title}</h3>}
-            {subtitle && <p className="card__subtitle">{subtitle}</p>}
+        <div className={cn('flex items-start justify-between gap-4', padding !== 'none' && 'px-6 pt-6')}>
+          <div className="space-y-1">
+            {title && <h3 className="font-semibold leading-none tracking-tight">{title}</h3>}
+            {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
           </div>
-          {headerActions && <div className="card__header-actions">{headerActions}</div>}
+          {headerActions && <div className="flex items-center gap-2">{headerActions}</div>}
         </div>
       )}
-      <div className="card__body">{children}</div>
-      {footer && <div className="card__footer">{footer}</div>}
+      <div className={cn(paddingStyles[padding])}>{children}</div>
+      {footer && (
+        <div className={cn('flex items-center', padding !== 'none' && 'px-6 pb-6')}>
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

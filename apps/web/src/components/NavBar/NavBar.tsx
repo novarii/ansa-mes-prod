@@ -6,9 +6,10 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Button } from '../Button/Button';
-import './NavBar.scss';
+import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 
 export interface NavBarProps {
   /** Custom className */
@@ -34,52 +35,60 @@ const navItems: NavItem[] = [
  * <NavBar />
  * ```
  */
-export function NavBar({ className = '' }: NavBarProps): React.ReactElement {
+export function NavBar({ className }: NavBarProps): React.ReactElement {
   const { empName, stationName, logout } = useAuth();
-
-  const classNames = ['nav', className].filter(Boolean).join(' ');
 
   const handleLogout = (): void => {
     logout();
   };
 
   return (
-    <nav className={classNames} aria-label="Main navigation">
-      <div className="nav__container">
+    <nav
+      className={cn(
+        'sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60',
+        className
+      )}
+      aria-label="Main navigation"
+    >
+      <div className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Logo/Brand */}
-        <div className="nav__brand">
-          <span className="nav__logo">ANSA MES</span>
+        <div className="flex items-center gap-6">
+          <span className="text-lg font-bold text-primary">ANSA MES</span>
+
+          {/* Navigation Links */}
+          <ul className="flex items-center gap-1">
+            {navItems.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    cn(
+                      'inline-flex h-9 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      isActive && 'bg-accent text-accent-foreground'
+                    )
+                  }
+                  end={item.to === '/'}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        {/* Navigation Links */}
-        <ul className="nav__links">
-          {navItems.map((item) => (
-            <li key={item.to} className="nav__item">
-              <NavLink
-                to={item.to}
-                className={({ isActive }) =>
-                  `nav__link ${isActive ? 'nav__link--active' : ''}`
-                }
-                end={item.to === '/'}
-              >
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-
         {/* User Info & Logout */}
-        <div className="nav__user">
-          <div className="nav__user-info">
-            <span className="nav__station">{stationName}</span>
-            <span className="nav__username">{empName}</span>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end text-sm">
+            <span className="font-medium text-foreground">{stationName}</span>
+            <span className="text-muted-foreground">{empName}</span>
           </div>
           <Button
             variant="ghost"
-            size="small"
+            size="sm"
             onClick={handleLogout}
             aria-label="Cikis Yap"
           >
+            <LogOut className="mr-2 size-4" />
             Cikis
           </Button>
         </div>

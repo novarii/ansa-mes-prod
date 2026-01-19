@@ -110,24 +110,24 @@ describe('Card', () => {
   describe('border variants', () => {
     it('should render with border by default', () => {
       render(<Card data-testid="card">Content</Card>);
-      expect(screen.getByTestId('card')).not.toHaveClass('card--no-border');
+      expect(screen.getByTestId('card')).toHaveClass('border');
     });
 
     it('should render without border when noBorder is true', () => {
       render(<Card noBorder data-testid="card">Content</Card>);
-      expect(screen.getByTestId('card')).toHaveClass('card--no-border');
+      expect(screen.getByTestId('card')).not.toHaveClass('border');
     });
   });
 
   describe('shadow variants', () => {
     it('should render with shadow by default', () => {
       render(<Card data-testid="card">Content</Card>);
-      expect(screen.getByTestId('card')).not.toHaveClass('card--no-shadow');
+      expect(screen.getByTestId('card')).toHaveClass('shadow-xs');
     });
 
     it('should render without shadow when noShadow is true', () => {
       render(<Card noShadow data-testid="card">Content</Card>);
-      expect(screen.getByTestId('card')).toHaveClass('card--no-shadow');
+      expect(screen.getByTestId('card')).not.toHaveClass('shadow-xs');
     });
   });
 

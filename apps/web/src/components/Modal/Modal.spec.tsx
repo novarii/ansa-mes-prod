@@ -205,7 +205,7 @@ describe('Modal', () => {
         </Modal>
       );
       const portalRoot = document.getElementById('modal-root');
-      expect(portalRoot?.querySelector('.modal')).toBeInTheDocument();
+      expect(portalRoot?.querySelector('[role="dialog"]')).toBeInTheDocument();
     });
   });
 });

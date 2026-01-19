@@ -82,19 +82,20 @@ describe('NavBar', () => {
     it('should highlight home link when on home route', () => {
       renderWithRouter(<NavBar />, { route: '/' });
       const homeLink = screen.getByRole('link', { name: /anasayfa/i });
-      expect(homeLink).toHaveClass('nav__link--active');
+      // Active link has bg-accent class (Tailwind)
+      expect(homeLink).toHaveClass('bg-accent');
     });
 
     it('should highlight team link when on team route', () => {
       renderWithRouter(<NavBar />, { route: '/team' });
       const teamLink = screen.getByRole('link', { name: /ekibim/i });
-      expect(teamLink).toHaveClass('nav__link--active');
+      expect(teamLink).toHaveClass('bg-accent');
     });
 
     it('should highlight calendar link when on calendar route', () => {
       renderWithRouter(<NavBar />, { route: '/calendar' });
       const calendarLink = screen.getByRole('link', { name: /takvim/i });
-      expect(calendarLink).toHaveClass('nav__link--active');
+      expect(calendarLink).toHaveClass('bg-accent');
     });
   });
 

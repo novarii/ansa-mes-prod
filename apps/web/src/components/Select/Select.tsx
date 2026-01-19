@@ -1,11 +1,14 @@
 /**
- * Select Component
+ * Select Component (Legacy)
  *
  * A dropdown select component with options.
+ *
+ * @deprecated Prefer using the shadcn Select from './ui/select' for new code.
  */
 
 import React, { SelectHTMLAttributes, forwardRef, ChangeEvent } from 'react';
-import './Select.scss';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface SelectOption {
   /** Option value */
@@ -62,20 +65,22 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   },
   ref
 ): React.ReactElement {
-  const classNames = [
-    'select',
-    error && 'select--error',
-    fullWidth && 'select--full-width',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
-    <div className={classNames} data-testid={dataTestId}>
+    <div
+      className={cn(
+        'relative',
+        fullWidth && 'w-full select--full-width',
+        error && 'select--error',
+        className
+      )}
+      data-testid={dataTestId}
+    >
       <select
         ref={ref}
-        className="select__input"
+        className={cn(
+          'flex h-9 w-full appearance-none rounded-md border border-input bg-transparent px-3 py-1 pr-8 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+          error && 'border-destructive focus:ring-destructive'
+        )}
         disabled={disabled}
         aria-invalid={error ? 'true' : undefined}
         onChange={onChange}
@@ -96,17 +101,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           </option>
         ))}
       </select>
-      <div className="select__icon" aria-hidden="true">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
+      <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+        <ChevronDown className="size-4" aria-hidden="true" />
       </div>
     </div>
   );

@@ -574,6 +574,164 @@ Build reusable UI components:
 
 ---
 
+## Phase 12.5: Migrate to shadcn/ui + Tailwind CSS v4 ✅ COMPLETED
+
+**Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 211 passing (all component tests updated for Tailwind classes)
+
+> Reference: `specs/ui-component-library.md`
+
+**Note:** This phase uses Tailwind CSS v4 with CSS-first configuration. No `tailwind.config.js` file is needed.
+
+### 12.5.1 Setup Tailwind CSS v4
+
+Install Tailwind CSS v4 with the Vite plugin (recommended for Vite projects):
+
+```bash
+# Tailwind CSS v4 with Vite plugin
+pnpm add tailwindcss @tailwindcss/vite
+
+# shadcn/ui dependencies
+pnpm add class-variance-authority clsx tailwind-merge
+pnpm add @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-tabs
+pnpm add @radix-ui/react-label @radix-ui/react-separator @radix-ui/react-slot
+```
+
+**Critical:** Pin `@radix-ui/react-primitive` to v1.0.2 to avoid `@mui/base` conflict (see `ui-component-library.md`):
+
+```json
+// In root package.json
+{
+  "pnpm": {
+    "overrides": {
+      "@radix-ui/react-primitive": "1.0.2"
+    }
+  }
+}
+```
+
+Update Vite configuration:
+
+```typescript
+// apps/web/vite.config.ts
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),  // Tailwind v4 Vite plugin - no postcss.config.js needed
+  ],
+});
+```
+
+Create CSS entry point with `@theme` configuration:
+
+```css
+/* apps/web/src/styles/globals.css */
+@import "tailwindcss";
+
+@theme {
+  /* Semantic colors using OKLCH color space */
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.141 0.005 285.823);
+  --color-primary: oklch(0.623 0.214 259.815);
+  /* ... see ui-component-library.md for full theme */
+}
+```
+
+### 12.5.2 Initialize shadcn/ui (Monorepo Support)
+
+The shadcn CLI now supports monorepos natively (December 2024 update).
+
+```bash
+cd apps/web
+pnpm dlx shadcn@latest init
+```
+
+**Important:** For Tailwind CSS v4, leave `tailwind.config` empty in `components.json`:
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "zinc",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui"
+  }
+}
+```
+
+Create `lib/utils.ts` with `cn()` helper.
+
+### 12.5.3 Install shadcn Components
+
+```bash
+pnpm dlx shadcn@latest add button input label card table dialog select badge tabs separator alert
+```
+
+### 12.5.4 Migrate Custom Components
+
+Replace custom SCSS components with shadcn equivalents:
+
+| Remove | Replace With |
+|--------|--------------|
+| `Button/Button.tsx` + `.scss` | `ui/button.tsx` |
+| `Input/Input.tsx` + `.scss` | `ui/input.tsx` |
+| `Modal/Modal.tsx` + `.scss` | `ui/dialog.tsx` |
+| `Table/Table.tsx` + `.scss` | `ui/table.tsx` |
+| `Card/Card.tsx` + `.scss` | `ui/card.tsx` |
+| `Select/Select.tsx` + `.scss` | `ui/select.tsx` |
+| `FormField/` | Compose with `ui/label` |
+
+### 12.5.5 Update Deprecated Utilities (v3 → v4)
+
+Search and replace deprecated utilities throughout the codebase:
+
+| v3 (Remove) | v4 (Replace With) |
+|-------------|-------------------|
+| `flex-grow-*` | `grow-*` |
+| `flex-shrink-*` | `shrink-*` |
+| `text-opacity-*` | `text-{color}/{opacity}` |
+| `bg-opacity-*` | `bg-{color}/{opacity}` |
+| `shadow-sm` | `shadow-xs` |
+| `rounded-sm` | `rounded-xs` |
+| `outline-none` | `outline-hidden` |
+| `ring` (3px) | `ring-3` |
+
+### 12.5.6 Rebuild Layout Components with Tailwind
+
+Update to use Tailwind classes instead of SCSS:
+- `Layout.tsx` - App shell
+- `NavBar.tsx` - Navigation bar
+- `PageHeader.tsx` - Page headers
+- `SearchInput.tsx` - Debounced search
+- `Spinner.tsx` - Loading indicator (custom, Tailwind-styled)
+
+### 12.5.7 Update Tests
+
+- Update component imports in test files
+- Verify all 168+ component tests still pass
+- Add tests for any new shadcn components
+
+### 12.5.8 Remove Old Files
+
+- Delete all `.scss` files from `components/`
+- Remove `tailwind.config.js` if it exists (v4 uses CSS-first config)
+- Remove `postcss.config.js` if using `@tailwindcss/vite`
+- Clean up any remaining custom CSS
+
+---
+
 ## Phase 13: Frontend Auth
 
 **Effort:** Medium (~4-6 hours)
@@ -941,6 +1099,7 @@ Implement:
 | 10 | API Bootstrap | Small |
 | 11 | Frontend Foundation | Medium |
 | 12 | Shared UI Components | Medium |
+| 12.5 | shadcn/ui + Tailwind CSS v4 Migration | Medium |
 | 13 | Frontend Auth | Medium |
 | 14 | Work Order List Page | Medium |
 | 15 | Work Order Detail Page | Medium |
@@ -980,6 +1139,7 @@ Implement:
 | `b1-integration-workflows.md` | Production receipts, transaction handling |
 | `user-permission-model.md` | Login flow, station authorization |
 | `i18n-turkish-locale.md` | Date/number formatting, translations |
+| `ui-component-library.md` | shadcn/ui setup, Tailwind CSS v4 config, OKLCH colors, component patterns |
 | `operational-standards.md` | Bootstrap, error handling, audit |
 | `testing-migration-strategy.md` | Test types, migration phases |
 | `current-mes-data-handbook.md` | Complete SQL queries, table schemas |

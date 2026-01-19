@@ -29,7 +29,8 @@ describe('SearchInput', () => {
 
     it('should render search icon', () => {
       render(<SearchInput onSearch={() => {}} />);
-      expect(document.querySelector('.search-input__icon')).toBeInTheDocument();
+      // Lucide Search icon is rendered as an SVG
+      expect(document.querySelector('svg')).toBeInTheDocument();
     });
   });
 
@@ -150,12 +151,15 @@ describe('SearchInput', () => {
   describe('loading state', () => {
     it('should show loading indicator when loading', () => {
       render(<SearchInput onSearch={() => {}} loading />);
-      expect(document.querySelector('.search-input__loading')).toBeInTheDocument();
+      // Lucide Loader2 icon has animate-spin class
+      expect(document.querySelector('.animate-spin')).toBeInTheDocument();
     });
 
-    it('should hide search icon when loading', () => {
+    it('should show spinner icon when loading', () => {
       render(<SearchInput onSearch={() => {}} loading />);
-      expect(document.querySelector('.search-input__icon--hidden')).toBeInTheDocument();
+      // When loading, there should be an animated spinner
+      const spinner = document.querySelector('svg.animate-spin');
+      expect(spinner).toBeInTheDocument();
     });
   });
 });

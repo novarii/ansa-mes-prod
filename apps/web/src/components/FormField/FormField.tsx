@@ -5,7 +5,8 @@
  */
 
 import React, { HTMLAttributes, ReactNode } from 'react';
-import './FormField.scss';
+import { Label } from '../ui/label';
+import { cn } from '@/lib/utils';
 
 export interface FormFieldProps extends HTMLAttributes<HTMLDivElement> {
   /** Field label */
@@ -39,33 +40,35 @@ export function FormField({
   helpText,
   error,
   children,
-  className = '',
+  className,
   ...props
 }: FormFieldProps): React.ReactElement {
   const hasError = Boolean(error);
-
-  const classNames = ['form-field', hasError && 'form-field--error', className]
-    .filter(Boolean)
-    .join(' ');
-
   const messageId = htmlFor ? `${htmlFor}-message` : undefined;
 
   return (
-    <div className={classNames} {...props}>
-      <label className="form-field__label" htmlFor={htmlFor}>
+    <div className={cn('space-y-2', className)} {...props}>
+      <Label htmlFor={htmlFor} className={cn(hasError && 'text-destructive')}>
         {label}
-        {required && <span className="form-field__required">*</span>}
-      </label>
+        {required && (
+          <span className="ml-1 text-destructive" aria-hidden="true">
+            *
+          </span>
+        )}
+      </Label>
 
-      <div className="form-field__control">{children}</div>
+      <div>{children}</div>
 
       {(error || helpText) && (
-        <div
+        <p
           id={messageId}
-          className={`form-field__message ${hasError ? 'form-field__message--error' : 'form-field__message--help'}`}
+          className={cn(
+            'text-sm',
+            hasError ? 'text-destructive' : 'text-muted-foreground'
+          )}
         >
           {error || helpText}
-        </div>
+        </p>
       )}
     </div>
   );

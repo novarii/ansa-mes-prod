@@ -22,34 +22,40 @@ describe('Spinner', () => {
   describe('sizes', () => {
     it('should render small size', () => {
       render(<Spinner size="small" data-testid="spinner" />);
-      expect(screen.getByTestId('spinner')).toHaveClass('spinner--small');
+      const svg = screen.getByTestId('spinner').querySelector('svg');
+      expect(svg).toHaveClass('size-4');
     });
 
     it('should render medium size by default', () => {
       render(<Spinner data-testid="spinner" />);
-      expect(screen.getByTestId('spinner')).toHaveClass('spinner--medium');
+      const svg = screen.getByTestId('spinner').querySelector('svg');
+      expect(svg).toHaveClass('size-6');
     });
 
     it('should render large size', () => {
       render(<Spinner size="large" data-testid="spinner" />);
-      expect(screen.getByTestId('spinner')).toHaveClass('spinner--large');
+      const svg = screen.getByTestId('spinner').querySelector('svg');
+      expect(svg).toHaveClass('size-8');
     });
   });
 
   describe('colors', () => {
     it('should render primary color by default', () => {
       render(<Spinner data-testid="spinner" />);
-      expect(screen.getByTestId('spinner')).toHaveClass('spinner--primary');
+      const svg = screen.getByTestId('spinner').querySelector('svg');
+      expect(svg).toHaveClass('text-primary');
     });
 
     it('should render white color', () => {
       render(<Spinner color="white" data-testid="spinner" />);
-      expect(screen.getByTestId('spinner')).toHaveClass('spinner--white');
+      const svg = screen.getByTestId('spinner').querySelector('svg');
+      expect(svg).toHaveClass('text-white');
     });
 
     it('should render inherit color', () => {
       render(<Spinner color="inherit" data-testid="spinner" />);
-      expect(screen.getByTestId('spinner')).toHaveClass('spinner--inherit');
+      const svg = screen.getByTestId('spinner').querySelector('svg');
+      expect(svg).toHaveClass('text-current');
     });
   });
 
@@ -57,7 +63,10 @@ describe('Spinner', () => {
     it('should render centered when centered prop is true', () => {
       render(<Spinner centered data-testid="spinner" />);
       expect(screen.getByTestId('spinner').parentElement).toHaveClass(
-        'spinner-container--centered'
+        'flex'
+      );
+      expect(screen.getByTestId('spinner').parentElement).toHaveClass(
+        'items-center'
       );
     });
   });
@@ -66,7 +75,7 @@ describe('Spinner', () => {
     it('should render visible label when showLabel is true', () => {
       render(<Spinner showLabel />);
       const label = screen.getByText('Yukleniyor...');
-      expect(label).not.toHaveClass('spinner__sr-only');
+      expect(label).not.toHaveClass('sr-only');
     });
 
     it('should render custom label', () => {

@@ -28,39 +28,39 @@ describe('Button', () => {
   describe('variants', () => {
     it('should render primary variant by default', () => {
       render(<Button>Primary</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--primary');
+      expect(screen.getByRole('button')).toHaveClass('bg-primary');
     });
 
     it('should render secondary variant', () => {
       render(<Button variant="secondary">Secondary</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--secondary');
+      expect(screen.getByRole('button')).toHaveClass('bg-secondary');
     });
 
     it('should render danger variant', () => {
       render(<Button variant="danger">Danger</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--danger');
+      expect(screen.getByRole('button')).toHaveClass('bg-destructive');
     });
 
     it('should render ghost variant', () => {
       render(<Button variant="ghost">Ghost</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--ghost');
+      expect(screen.getByRole('button')).toHaveClass('hover:bg-accent');
     });
   });
 
   describe('sizes', () => {
     it('should render medium size by default', () => {
       render(<Button>Medium</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--medium');
+      expect(screen.getByRole('button')).toHaveClass('h-9');
     });
 
     it('should render small size', () => {
       render(<Button size="small">Small</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--small');
+      expect(screen.getByRole('button')).toHaveClass('h-8');
     });
 
     it('should render large size', () => {
       render(<Button size="large">Large</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--large');
+      expect(screen.getByRole('button')).toHaveClass('h-10');
     });
   });
 
@@ -73,14 +73,13 @@ describe('Button', () => {
     it('should show loading state', () => {
       render(<Button loading>Loading</Button>);
       const button = screen.getByRole('button');
-      expect(button).toHaveClass('button--loading');
       expect(button).toBeDisabled();
       expect(button).toHaveAttribute('aria-busy', 'true');
     });
 
     it('should render full width when fullWidth is true', () => {
       render(<Button fullWidth>Full Width</Button>);
-      expect(screen.getByRole('button')).toHaveClass('button--full-width');
+      expect(screen.getByRole('button')).toHaveClass('w-full');
     });
   });
 

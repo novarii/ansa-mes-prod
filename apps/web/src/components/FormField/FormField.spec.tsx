@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { FormField } from './FormField';
-import { Input } from '../Input/Input';
+import { Input } from '../ui/input';
 import { I18nProvider } from '@org/shared-i18n';
 
 // Wrapper for i18n context
@@ -79,7 +79,7 @@ describe('FormField', () => {
     it('should render error message', () => {
       renderWithI18n(
         <FormField label="Email" error="Invalid email address">
-          <Input error />
+          <Input aria-invalid="true" />
         </FormField>
       );
       expect(screen.getByText('Invalid email address')).toBeInTheDocument();
@@ -88,16 +88,18 @@ describe('FormField', () => {
     it('should have error styling when error is present', () => {
       renderWithI18n(
         <FormField label="Email" error="Error" data-testid="field">
-          <Input error />
+          <Input aria-invalid="true" />
         </FormField>
       );
-      expect(screen.getByTestId('field')).toHaveClass('form-field--error');
+      // Error message should have destructive text color
+      const errorMessage = screen.getByText('Error');
+      expect(errorMessage).toHaveClass('text-destructive');
     });
 
     it('should show error instead of help text when both present', () => {
       renderWithI18n(
         <FormField label="Field" helpText="Help" error="Error message">
-          <Input error />
+          <Input aria-invalid="true" />
         </FormField>
       );
       expect(screen.getByText('Error message')).toBeInTheDocument();

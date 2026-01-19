@@ -73,7 +73,7 @@ This is an Nx monorepo with pnpm workspaces containing a full-stack application:
 - **@org/web** (`apps/web/`) - React 19 frontend
   - Bundled with Vite
   - Tests with Vitest
-  - Styles: SCSS
+  - Styles: Tailwind CSS v4 + shadcn/ui
   - Entry point: `src/main.tsx`
 
 - **@org/api-e2e** (`apps/api-e2e/`) - API integration tests (Jest)
@@ -209,3 +209,26 @@ If you see `TS2307: Cannot find module '@org/xxx'`:
 - **React Context for auth/session** - App-wide state that rarely changes
 - **Local state with `useState`** - Keep state close to where it's used
 - **Optimize renders** - Use `React.memo`, `useMemo`, `useCallback` where appropriate
+
+## Tailwind CSS v4 Rules
+
+> Reference: `specs/ui-component-library.md`
+
+- **CSS-first config** - No `tailwind.config.js`; use `@theme` directive in CSS
+- **Import syntax** - Use `@import "tailwindcss"` not `@tailwind` directives
+- **Vite plugin** - Use `@tailwindcss/vite`, no PostCSS config needed
+- **OKLCH colors** - Use `oklch()` not `hsl()` for theme colors
+- **Pin @radix-ui/react-primitive** - Use v1.0.2 to avoid `@mui/base` conflict
+
+### Deprecated Utilities (v3 → v4)
+
+| Don't Use | Use Instead |
+|-----------|-------------|
+| `flex-grow-*` | `grow-*` |
+| `flex-shrink-*` | `shrink-*` |
+| `text-opacity-*` | `text-black/50` |
+| `bg-opacity-*` | `bg-black/50` |
+| `shadow-sm` | `shadow-xs` |
+| `rounded-sm` | `rounded-xs` |
+| `outline-none` | `outline-hidden` |
+| `ring` | `ring-3` (default is now 1px) |

@@ -2,30 +2,77 @@
  * Shared UI Components
  *
  * This module exports all reusable UI components for the web application.
- * Components are organized into three categories:
- * - Core: Basic building blocks (Button, Input, Modal, Table, Card, Spinner)
- * - Layout: Page structure components (Layout, NavBar, PageHeader)
- * - Form: Form-specific components (FormField, Select, SearchInput)
+ * Components are organized into:
+ * - UI: shadcn/ui base components (Button, Input, Card, Table, Dialog, etc.)
+ * - Layout: App structure components (Layout, NavBar, PageHeader)
+ * - Form: Form-specific components (FormField, SearchInput)
  */
 
-// Core components
-export { Button } from './Button/Button';
-export type { ButtonProps } from './Button/Button';
+// shadcn/ui components
+export { Button, buttonVariants } from './ui/button';
+export type { ButtonProps } from './ui/button';
 
-export { Input } from './Input/Input';
-export type { InputProps } from './Input/Input';
+export { Input } from './ui/input';
 
-export { Modal } from './Modal/Modal';
-export type { ModalProps } from './Modal/Modal';
+export { Label } from './ui/label';
 
-export { Table } from './Table/Table';
-export type { TableProps, TableColumn } from './Table/Table';
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+} from './ui/card';
 
-export { Card } from './Card/Card';
-export type { CardProps } from './Card/Card';
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from './ui/table';
 
-export { Spinner } from './Spinner/Spinner';
-export type { SpinnerProps } from './Spinner/Spinner';
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from './ui/dialog';
+
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+} from './ui/select';
+
+export { Badge, badgeVariants } from './ui/badge';
+
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+
+export { Separator } from './ui/separator';
+
+export { Alert, AlertTitle, AlertDescription } from './ui/alert';
+
+export { Spinner, spinnerVariants } from './ui/spinner';
+export type { SpinnerProps } from './ui/spinner';
 
 // Layout components
 export { Layout } from './Layout/Layout';
@@ -40,9 +87,6 @@ export type { PageHeaderProps } from './PageHeader/PageHeader';
 // Form components
 export { FormField } from './FormField/FormField';
 export type { FormFieldProps } from './FormField/FormField';
-
-export { Select } from './Select/Select';
-export type { SelectProps, SelectOption } from './Select/Select';
 
 export { SearchInput } from './SearchInput/SearchInput';
 export type { SearchInputProps } from './SearchInput/SearchInput';

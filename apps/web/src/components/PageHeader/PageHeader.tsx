@@ -6,7 +6,8 @@
 
 import React, { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import './PageHeader.scss';
+import { ChevronLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface PageHeaderProps {
   /** Page title */
@@ -42,37 +43,30 @@ export function PageHeader({
   backTo,
   backLabel = 'Geri',
   actions,
-  className = '',
+  className,
 }: PageHeaderProps): React.ReactElement {
-  const classNames = ['page-header', className].filter(Boolean).join(' ');
-
   return (
-    <header className={classNames}>
+    <header className={cn('mb-6 space-y-4', className)}>
       {backTo && (
-        <Link to={backTo} className="page-header__back" aria-label={backLabel}>
-          <svg
-            className="page-header__back-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          <span className="page-header__back-text">{backLabel}</span>
+        <Link
+          to={backTo}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={backLabel}
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
+          <span>{backLabel}</span>
         </Link>
       )}
 
-      <div className="page-header__content">
-        <div className="page-header__title-group">
-          <h1 className="page-header__title">{title}</h1>
-          {subtitle && <p className="page-header__subtitle">{subtitle}</p>}
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          {subtitle && (
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
+          )}
         </div>
 
-        {actions && <div className="page-header__actions">{actions}</div>}
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
     </header>
   );
