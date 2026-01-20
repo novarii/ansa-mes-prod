@@ -10,10 +10,12 @@ describe('TeamService', () => {
   const mockResourceRepository = {
     findAllMachines: jest.fn(),
     findWorkersForMachine: jest.fn(),
+    findAllAssignedWorkers: jest.fn(),
   };
 
   const mockActivityRepository = {
     findTodayActivitiesForWorkers: jest.fn(),
+    findAllTodayActivities: jest.fn(),
   };
 
   const mockMachines = [
@@ -86,6 +88,17 @@ describe('TeamService', () => {
       U_WorkOrder: '12348',
       U_Start: new Date('2026-01-18T08:00:00'),
     },
+  ];
+
+  // All workers from OHEM with their current machine assignment (U_mainStation)
+  const mockAllAssignedWorkers = [
+    { empID: 100, firstName: 'Ali', lastName: 'Yilmaz', jobTitle: null, mainStation: 'M001' },
+    { empID: 101, firstName: 'Mehmet', lastName: 'Kaya', jobTitle: null, mainStation: 'M001' },
+    { empID: 102, firstName: 'Ahmet', lastName: 'Demir', jobTitle: null, mainStation: 'M001' },
+    { empID: 103, firstName: 'Veli', lastName: 'Ozturk', jobTitle: null, mainStation: 'M001' },
+    { empID: 200, firstName: 'Fatma', lastName: 'Yildiz', jobTitle: null, mainStation: 'M002' },
+    { empID: 201, firstName: 'Ayse', lastName: 'Can', jobTitle: null, mainStation: 'M002' },
+    { empID: 202, firstName: 'Zeynep', lastName: 'Arslan', jobTitle: null, mainStation: 'M002' },
   ];
 
   beforeEach(async () => {
@@ -202,6 +215,7 @@ describe('TeamService', () => {
   describe('getMachinesWithWorkerStatus', () => {
     beforeEach(() => {
       resourceRepository.findAllMachines.mockResolvedValue(mockMachines);
+      resourceRepository.findAllAssignedWorkers.mockResolvedValue(mockAllAssignedWorkers);
       resourceRepository.findWorkersForMachine
         .mockResolvedValueOnce(mockWorkersM001)
         .mockResolvedValueOnce(mockWorkersM002)
@@ -209,6 +223,7 @@ describe('TeamService', () => {
       activityRepository.findTodayActivitiesForWorkers.mockResolvedValue(
         mockActivities
       );
+      activityRepository.findAllTodayActivities.mockResolvedValue(mockActivities);
     });
 
     it('should return team view response with all machines', async () => {

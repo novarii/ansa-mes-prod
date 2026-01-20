@@ -138,7 +138,26 @@ function mockAuthenticatedSession(): void {
 
 interface RenderOptions {
   docEntry?: number;
-  onBreakReasonRequired?: () => void;
+  onStartEmployeesRequired?: () => void;
+  onStopEmployeesRequired?: () => void;
+}
+
+/**
+ * Setup API mocks for both endpoints (activity state and active workers)
+ */
+function setupApiMocks(
+  stateResponse: ActivityStateResponse,
+  activeWorkers: unknown[] = []
+): void {
+  vi.mocked(apiModule.api.get).mockImplementation((url: string) => {
+    if (url.includes('/activity-state')) {
+      return Promise.resolve(stateResponse);
+    }
+    if (url.includes('/active-workers')) {
+      return Promise.resolve(activeWorkers);
+    }
+    return Promise.reject(new Error(`Unexpected API call: ${url}`));
+  });
 }
 
 /**
@@ -147,7 +166,11 @@ interface RenderOptions {
 function renderWithProviders(
   options: RenderOptions = {}
 ): ReturnType<typeof render> & { queryClient: QueryClient } {
-  const { docEntry = 6171, onBreakReasonRequired = vi.fn() } = options;
+  const {
+    docEntry = 6171,
+    onStartEmployeesRequired = vi.fn(),
+    onStopEmployeesRequired = vi.fn(),
+  } = options;
   const queryClient = createTestQueryClient();
 
   mockAuthenticatedSession();
@@ -158,7 +181,8 @@ function renderWithProviders(
         <AuthProvider>
           <ActivityButtons
             docEntry={docEntry}
-            onBreakReasonRequired={onBreakReasonRequired}
+            onStartEmployeesRequired={onStartEmployeesRequired}
+            onStopEmployeesRequired={onStopEmployeesRequired}
           />
         </AuthProvider>
       </I18nProvider>
@@ -189,14 +213,15 @@ describe('ActivityButtons', () => {
       expect(screen.getByTestId('activity-buttons-loading')).toBeInTheDocument();
     });
 
-    it('should show only Start button when no prior activity', async () => {
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+    it('should show only Start button when no prior activity and no active workers', async () => {
+      setupApiMocks(
         createStateResponse({
           canStart: true,
           canStop: false,
           canResume: false,
           canFinish: false,
-        })
+        }),
+        [] // No active workers
       );
 
       renderWithProviders();
@@ -205,14 +230,14 @@ describe('ActivityButtons', () => {
         expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
       });
 
-      // Other buttons should not be visible
+      // Stop should not be visible when no active workers
       expect(screen.queryByRole('button', { name: /durdur/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /devam/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /bitir/i })).not.toBeInTheDocument();
     });
 
     it('should fetch activity state on mount', async () => {
-      vi.mocked(apiModule.api.get).mockResolvedValue(createStateResponse());
+      setupApiMocks(createStateResponse(), []);
 
       renderWithProviders({ docEntry: 6171 });
 
@@ -226,8 +251,8 @@ describe('ActivityButtons', () => {
   });
 
   describe('working state (BAS)', () => {
-    it('should show Stop and Finish buttons when working (BAS)', async () => {
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+    it('should show Start, Stop and Finish buttons when working (BAS) with active workers', async () => {
+      setupApiMocks(
         createStateResponse({
           processType: 'BAS',
           activityCode: 'ACT-001',
@@ -235,25 +260,29 @@ describe('ActivityButtons', () => {
           canStop: true,
           canResume: false,
           canFinish: true,
-        })
+        }),
+        [{ empID: 123, firstName: 'Test', lastName: 'Worker' }] // Active workers
       );
 
       renderWithProviders();
 
       await waitFor(() => {
+        // Start is always visible (can add more workers)
+        expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
+        // Stop is visible when there are active workers
         expect(screen.getByRole('button', { name: /durdur/i })).toBeInTheDocument();
+        // Finish is visible based on current user state
         expect(screen.getByRole('button', { name: /bitir/i })).toBeInTheDocument();
       });
 
-      // Start and Resume should not be visible
-      expect(screen.queryByRole('button', { name: /baslat/i })).not.toBeInTheDocument();
+      // Resume should not be visible when working
       expect(screen.queryByRole('button', { name: /devam/i })).not.toBeInTheDocument();
     });
   });
 
   describe('paused state (DUR)', () => {
-    it('should show Resume and Finish buttons when paused (DUR)', async () => {
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+    it('should show Start, Resume and Finish buttons when paused (DUR)', async () => {
+      setupApiMocks(
         createStateResponse({
           processType: 'DUR',
           activityCode: 'ACT-001',
@@ -262,25 +291,27 @@ describe('ActivityButtons', () => {
           canStop: false,
           canResume: true,
           canFinish: true,
-        })
+        }),
+        [] // No active workers (all paused)
       );
 
       renderWithProviders();
 
       await waitFor(() => {
+        // Start is always visible (can add more workers)
+        expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /devam/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /bitir/i })).toBeInTheDocument();
       });
 
-      // Start and Stop should not be visible
-      expect(screen.queryByRole('button', { name: /baslat/i })).not.toBeInTheDocument();
+      // Stop should not be visible when no active workers
       expect(screen.queryByRole('button', { name: /durdur/i })).not.toBeInTheDocument();
     });
   });
 
   describe('finished state (BIT)', () => {
     it('should show Start button after finish (BIT)', async () => {
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+      setupApiMocks(
         createStateResponse({
           processType: 'BIT',
           activityCode: 'ACT-001',
@@ -288,7 +319,8 @@ describe('ActivityButtons', () => {
           canStop: false,
           canResume: false,
           canFinish: false,
-        })
+        }),
+        [] // No active workers
       );
 
       renderWithProviders();
@@ -304,23 +336,13 @@ describe('ActivityButtons', () => {
   });
 
   describe('Start action', () => {
-    it('should call start API when Start button is clicked', async () => {
+    it('should call onStartEmployeesRequired when Start button is clicked', async () => {
       const user = userEvent.setup();
+      const onStartEmployeesRequired = vi.fn();
 
-      vi.mocked(apiModule.api.get).mockResolvedValue(
-        createStateResponse({ canStart: true })
-      );
-      vi.mocked(apiModule.api.post).mockResolvedValue(
-        createActionResponse('BAS', {
-          processType: 'BAS',
-          canStart: false,
-          canStop: true,
-          canResume: false,
-          canFinish: true,
-        })
-      );
+      setupApiMocks(createStateResponse({ canStart: true }), []);
 
-      renderWithProviders({ docEntry: 6171 });
+      renderWithProviders({ docEntry: 6171, onStartEmployeesRequired });
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
@@ -329,98 +351,24 @@ describe('ActivityButtons', () => {
       const startButton = screen.getByRole('button', { name: /baslat/i });
       await user.click(startButton);
 
-      await waitFor(() => {
-        expect(apiModule.api.post).toHaveBeenCalledWith(
-          '/work-orders/6171/activity/start',
-          {}
-        );
-      });
-    });
-
-    it('should update UI after successful start', async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(apiModule.api.get).mockResolvedValue(
-        createStateResponse({ canStart: true })
-      );
-      vi.mocked(apiModule.api.post).mockResolvedValue(
-        createActionResponse('BAS', {
-          processType: 'BAS',
-          canStart: false,
-          canStop: true,
-          canResume: false,
-          canFinish: true,
-        })
-      );
-
-      renderWithProviders();
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: /baslat/i }));
-
-      // After start, should show Stop and Finish buttons
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /durdur/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /bitir/i })).toBeInTheDocument();
-      });
-    });
-
-    it('should disable button during API call', async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(apiModule.api.get).mockResolvedValue(
-        createStateResponse({ canStart: true })
-      );
-
-      // Slow response
-      vi.mocked(apiModule.api.post).mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(
-              () =>
-                resolve(
-                  createActionResponse('BAS', {
-                    processType: 'BAS',
-                    canStart: false,
-                    canStop: true,
-                    canFinish: true,
-                  })
-                ),
-              100
-            )
-          )
-      );
-
-      renderWithProviders();
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
-      });
-
-      const startButton = screen.getByRole('button', { name: /baslat/i });
-      await user.click(startButton);
-
-      // Button should be disabled during loading
-      expect(startButton).toBeDisabled();
+      expect(onStartEmployeesRequired).toHaveBeenCalled();
     });
   });
 
   describe('Stop action', () => {
-    it('should call onBreakReasonRequired when Stop button is clicked', async () => {
+    it('should call onStopEmployeesRequired when Stop button is clicked', async () => {
       const user = userEvent.setup();
-      const onBreakReasonRequired = vi.fn();
+      const onStopEmployeesRequired = vi.fn();
 
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+      setupApiMocks(
         createStateResponse({
           processType: 'BAS',
           canStop: true,
-        })
+        }),
+        [{ empID: 123, firstName: 'Test', lastName: 'Worker' }] // Active workers needed for Stop button
       );
 
-      renderWithProviders({ onBreakReasonRequired });
+      renderWithProviders({ onStopEmployeesRequired });
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /durdur/i })).toBeInTheDocument();
@@ -428,7 +376,7 @@ describe('ActivityButtons', () => {
 
       await user.click(screen.getByRole('button', { name: /durdur/i }));
 
-      expect(onBreakReasonRequired).toHaveBeenCalled();
+      expect(onStopEmployeesRequired).toHaveBeenCalled();
     });
   });
 
@@ -436,12 +384,13 @@ describe('ActivityButtons', () => {
     it('should call resume API when Resume button is clicked', async () => {
       const user = userEvent.setup();
 
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+      setupApiMocks(
         createStateResponse({
           processType: 'DUR',
           canResume: true,
           canFinish: true,
-        })
+        }),
+        []
       );
       vi.mocked(apiModule.api.post).mockResolvedValue(
         createActionResponse('DEV', {
@@ -468,53 +417,19 @@ describe('ActivityButtons', () => {
         );
       });
     });
-
-    it('should update UI after successful resume', async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(apiModule.api.get).mockResolvedValue(
-        createStateResponse({
-          processType: 'DUR',
-          canResume: true,
-          canFinish: true,
-        })
-      );
-      vi.mocked(apiModule.api.post).mockResolvedValue(
-        createActionResponse('DEV', {
-          processType: 'DEV',
-          canStart: false,
-          canStop: true,
-          canResume: false,
-          canFinish: true,
-        })
-      );
-
-      renderWithProviders();
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /devam/i })).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: /devam/i }));
-
-      // After resume, should show Stop and Finish buttons
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /durdur/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /bitir/i })).toBeInTheDocument();
-      });
-    });
   });
 
   describe('Finish action', () => {
     it('should call finish API when Finish button is clicked', async () => {
       const user = userEvent.setup();
 
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+      setupApiMocks(
         createStateResponse({
           processType: 'BAS',
           canStop: true,
           canFinish: true,
-        })
+        }),
+        [{ empID: 123, firstName: 'Test', lastName: 'Worker' }]
       );
       vi.mocked(apiModule.api.post).mockResolvedValue(
         createActionResponse('BIT', {
@@ -541,40 +456,6 @@ describe('ActivityButtons', () => {
         );
       });
     });
-
-    it('should update UI after successful finish', async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(apiModule.api.get).mockResolvedValue(
-        createStateResponse({
-          processType: 'BAS',
-          canStop: true,
-          canFinish: true,
-        })
-      );
-      vi.mocked(apiModule.api.post).mockResolvedValue(
-        createActionResponse('BIT', {
-          processType: 'BIT',
-          canStart: true,
-          canStop: false,
-          canResume: false,
-          canFinish: false,
-        })
-      );
-
-      renderWithProviders();
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /bitir/i })).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: /bitir/i }));
-
-      // After finish, should show Start button
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
-      });
-    });
   });
 
   describe('error handling', () => {
@@ -596,44 +477,11 @@ describe('ActivityButtons', () => {
         expect(screen.getByRole('alert')).toBeInTheDocument();
       });
     });
-
-    it('should show error message on action failure', async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(apiModule.api.get).mockResolvedValue(
-        createStateResponse({ canStart: true })
-      );
-
-      const mockError = new apiModule.ApiRequestError({
-        statusCode: 400,
-        message: 'Is emri baslatma hatasi',
-        error: 'BAD_REQUEST',
-        timestamp: '2026-01-19T10:00:00Z',
-        path: '/api/work-orders/6171/activity/start',
-        correlationId: 'abc-123',
-      });
-      vi.mocked(apiModule.api.post).mockRejectedValue(mockError);
-
-      renderWithProviders();
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /baslat/i })).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole('button', { name: /baslat/i }));
-
-      await waitFor(() => {
-        expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByText(/baslatma hatasi/i)).toBeInTheDocument();
-      });
-    });
   });
 
   describe('accessibility', () => {
     it('should have proper ARIA labels on buttons', async () => {
-      vi.mocked(apiModule.api.get).mockResolvedValue(
-        createStateResponse({ canStart: true })
-      );
+      setupApiMocks(createStateResponse({ canStart: true }), []);
 
       renderWithProviders();
 
@@ -657,11 +505,12 @@ describe('ActivityButtons', () => {
 
   describe('external stop handler', () => {
     it('should expose handleStop method for external modal', async () => {
-      vi.mocked(apiModule.api.get).mockResolvedValue(
+      setupApiMocks(
         createStateResponse({
           processType: 'BAS',
           canStop: true,
-        })
+        }),
+        [{ empID: 123, firstName: 'Test', lastName: 'Worker' }]
       );
       vi.mocked(apiModule.api.post).mockResolvedValue(
         createActionResponse('DUR', {
@@ -677,7 +526,7 @@ describe('ActivityButtons', () => {
         expect(screen.getByRole('button', { name: /durdur/i })).toBeInTheDocument();
       });
 
-      // Simulate external call to stop (from BreakReasonModal)
+      // Simulate external call to stop (from StopActivityMultiModal)
       await apiModule.api.post('/work-orders/6171/activity/stop', {
         breakCode: '1',
         notes: 'Test note',

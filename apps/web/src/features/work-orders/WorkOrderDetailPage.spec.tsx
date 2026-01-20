@@ -149,12 +149,42 @@ function mockAuthenticatedSession(): void {
 }
 
 /**
+ * Mock activity state response
+ */
+const mockActivityState = {
+  state: {
+    activityCode: null,
+    processType: null,
+    lastActivityTime: null,
+    breakCode: null,
+    canStart: true,
+    canStop: false,
+    canResume: false,
+    canFinish: false,
+  },
+  docEntry: 6171,
+  empId: 123,
+};
+
+/**
  * Standard API mock setup
  */
 function setupApiMock(): void {
   vi.mocked(apiModule.api.get).mockImplementation((url: string) => {
     if (url.includes('/pick-list')) {
       return Promise.resolve(mockPickListResponse);
+    }
+    if (url.includes('/activity-state')) {
+      return Promise.resolve(mockActivityState);
+    }
+    if (url.includes('/active-workers')) {
+      return Promise.resolve([]); // No active workers
+    }
+    if (url.includes('/break-reasons')) {
+      return Promise.resolve([]);
+    }
+    if (url.includes('/authorized-workers')) {
+      return Promise.resolve([]);
     }
     if (url.includes('/work-orders/')) {
       return Promise.resolve(mockWorkOrderDetail);
@@ -421,6 +451,18 @@ describe('WorkOrderDetailPage', () => {
         if (url.includes('/pick-list')) {
           return Promise.resolve(mockPickListResponse);
         }
+        if (url.includes('/activity-state')) {
+          return Promise.resolve(mockActivityState);
+        }
+        if (url.includes('/active-workers')) {
+          return Promise.resolve([]);
+        }
+        if (url.includes('/break-reasons')) {
+          return Promise.resolve([]);
+        }
+        if (url.includes('/authorized-workers')) {
+          return Promise.resolve([]);
+        }
         return Promise.resolve({
           ...mockWorkOrderDetail,
           customerName: null,
@@ -633,6 +675,18 @@ describe('WorkOrderDetailPage', () => {
         if (url.includes('/pick-list')) {
           return new Promise(() => {}); // Never resolves
         }
+        if (url.includes('/activity-state')) {
+          return Promise.resolve(mockActivityState);
+        }
+        if (url.includes('/active-workers')) {
+          return Promise.resolve([]);
+        }
+        if (url.includes('/break-reasons')) {
+          return Promise.resolve([]);
+        }
+        if (url.includes('/authorized-workers')) {
+          return Promise.resolve([]);
+        }
         return Promise.resolve(mockWorkOrderDetail);
       });
 
@@ -660,6 +714,18 @@ describe('WorkOrderDetailPage', () => {
       vi.mocked(apiModule.api.get).mockImplementation((url: string) => {
         if (url.includes('/pick-list')) {
           return Promise.resolve({ docEntry: 6171, items: [] });
+        }
+        if (url.includes('/activity-state')) {
+          return Promise.resolve(mockActivityState);
+        }
+        if (url.includes('/active-workers')) {
+          return Promise.resolve([]);
+        }
+        if (url.includes('/break-reasons')) {
+          return Promise.resolve([]);
+        }
+        if (url.includes('/authorized-workers')) {
+          return Promise.resolve([]);
         }
         return Promise.resolve(mockWorkOrderDetail);
       });

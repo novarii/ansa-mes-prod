@@ -989,9 +989,11 @@ Location: `apps/web/src/features/team/MachineCard.tsx`
 
 ---
 
-## Phase 18: Calendar View Page
+## Phase 18: Calendar View Page ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-20
+**Tests:** 54 passing (26 CalendarPage + 28 CalendarEventCard)
 
 > Reference: `specs/feature-team-calendar.md`
 

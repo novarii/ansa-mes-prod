@@ -12,10 +12,7 @@ import { ComponentShowcase } from '../features/dev/ComponentShowcase';
 import { LoginPage, StationSelectPage } from '../features/auth';
 import { WorkOrderListPage, WorkOrderDetailPage } from '../features/work-orders';
 import { TeamPage } from '../features/team';
-
-function CalendarPage(): JSX.Element {
-  return <div data-testid="calendar-page">Calendar Page (Phase 18)</div>;
-}
+import { CalendarPage } from '../features/calendar';
 
 /**
  * Protected route wrapper that requires authentication
