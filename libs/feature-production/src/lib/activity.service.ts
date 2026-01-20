@@ -352,17 +352,25 @@ export class ActivityService {
     // Get all authorized workers for the machine
     const allWorkers = await this.resourceRepository.findWorkersForMachine(resCode);
 
-    // Get current state for each worker on this work order
+    if (allWorkers.length === 0) {
+      return [];
+    }
+
+    // Get current state for ALL workers in a SINGLE batched query
+    // This avoids N+1 queries which caused 14-15s response times
+    const empIds = allWorkers.map((w) => w.empID);
+    const stateMap = await this.activityRepository.getWorkersCurrentStateForWorkOrder(
+      docEntry,
+      empIds
+    );
+
+    // Filter to only workers with active state (BAS or DEV)
     const workersWithState: WorkerForSelection[] = [];
 
     for (const worker of allWorkers) {
-      const state = await this.activityRepository.getWorkerCurrentState(
-        docEntry,
-        worker.empID
-      );
+      const state = stateMap.get(worker.empID);
 
-      // Only include workers with active state (BAS or DEV)
-      if (state.processType === 'BAS' || state.processType === 'DEV') {
+      if (state && (state.processType === 'BAS' || state.processType === 'DEV')) {
         workersWithState.push({
           empID: worker.empID,
           firstName: worker.firstName,

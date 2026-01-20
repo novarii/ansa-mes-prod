@@ -205,6 +205,12 @@ If you see `TS2307: Cannot find module '@org/xxx'`:
 - **Pipes for validation & transformation** - Use NestJS Pipes at framework level
 - **Guards for authorization** - RBAC and permission checks
 
+## Database & Query Rules
+
+- **Avoid N+1 queries** - Never loop and query inside; use batch queries with `IN` clauses or window functions (`ROW_NUMBER()`)
+- **Deterministic ordering** - Always include a unique tie-breaker (e.g., `DocEntry DESC`) in ORDER BY clauses to handle timestamp collisions
+- **Activity table ordering** - `@ATELIERATTN` queries must use: `ORDER BY U_Start DESC, U_StartTime DESC, DocEntry DESC` (see `specs/feature-production.md`)
+
 ## React Rules
 
 - **Functional components only** - No class components

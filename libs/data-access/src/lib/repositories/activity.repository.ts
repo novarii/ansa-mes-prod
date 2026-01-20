@@ -122,7 +122,7 @@ export class ActivityRepository {
       FROM "@ATELIERATTN"
       WHERE "U_WorkOrder" = ?
         AND "U_EmpId" = ?
-      ORDER BY "U_Start" DESC
+      ORDER BY "U_Start" DESC, "U_StartTime" DESC, "DocEntry" DESC
     `;
 
     return this.hanaService.query<Activity>(sql, [
@@ -158,7 +158,7 @@ export class ActivityRepository {
       FROM "@ATELIERATTN"
       WHERE "U_WorkOrder" = ?
         AND "U_EmpId" = ?
-      ORDER BY "U_Start" DESC
+      ORDER BY "U_Start" DESC, "U_StartTime" DESC, "DocEntry" DESC
     `;
 
     const latest = await this.hanaService.queryOne<LatestActivityResult>(sql, [
@@ -208,7 +208,7 @@ export class ActivityRepository {
       LEFT JOIN "OHEM" T1 ON T0."U_EmpId" = CAST(T1."empID" AS VARCHAR)
       LEFT JOIN "@BREAKREASON" T2 ON T0."U_BreakCode" = T2."Code"
       WHERE T0."U_WorkOrder" = ?
-      ORDER BY T0."U_Start" DESC
+      ORDER BY T0."U_Start" DESC, T0."U_StartTime" DESC, T0."DocEntry" DESC
     `;
 
     return this.hanaService.query<ActivityWithDetails>(sql, [String(docEntry)]);
@@ -248,7 +248,7 @@ export class ActivityRepository {
       WHERE "U_ResCode" = ?
         AND "U_EmpId" IN (${placeholders})
         AND "U_Start" >= CURRENT_DATE
-      ORDER BY "U_Start" DESC
+      ORDER BY "U_Start" DESC, "U_StartTime" DESC, "DocEntry" DESC
     `;
 
     return this.hanaService.query<TodayActivityResult>(sql, [
@@ -275,10 +275,83 @@ export class ActivityRepository {
         "U_Start"
       FROM "@ATELIERATTN"
       WHERE "U_Start" >= CURRENT_DATE
-      ORDER BY "U_Start" DESC
+      ORDER BY "U_Start" DESC, "U_StartTime" DESC, "DocEntry" DESC
     `;
 
     return this.hanaService.query<TodayActivityResult>(sql);
+  }
+
+  /**
+   * Get current activity state for MULTIPLE workers on a work order in a SINGLE query
+   *
+   * This is a batched version of getWorkerCurrentState() that avoids N+1 queries.
+   * Uses a window function to get the latest activity per worker efficiently.
+   *
+   * @param docEntry - Work order DocEntry
+   * @param empIds - Array of employee IDs to check
+   * @returns Map of empId to their current activity state
+   */
+  async getWorkersCurrentStateForWorkOrder(
+    docEntry: number,
+    empIds: number[]
+  ): Promise<Map<number, WorkerActivityState>> {
+    const result = new Map<number, WorkerActivityState>();
+
+    if (empIds.length === 0) {
+      return result;
+    }
+
+    // Build IN clause for employee IDs
+    const empIdStrings = empIds.map((id) => String(id));
+    const placeholders = empIdStrings.map(() => '?').join(', ');
+
+    // Use window function to get latest activity per worker in ONE query
+    // Must order by both U_Start (date) and U_StartTime (HHMM) to get true latest
+    const sql = `
+      SELECT "Code", "U_EmpId", "U_ProcType", "U_Start", "U_BreakCode"
+      FROM (
+        SELECT
+          "Code",
+          "U_EmpId",
+          "U_ProcType",
+          "U_Start",
+          "U_BreakCode",
+          ROW_NUMBER() OVER (PARTITION BY "U_EmpId" ORDER BY "U_Start" DESC, "U_StartTime" DESC, "DocEntry" DESC) AS rn
+        FROM "@ATELIERATTN"
+        WHERE "U_WorkOrder" = ?
+          AND "U_EmpId" IN (${placeholders})
+      )
+      WHERE rn = 1
+    `;
+
+    const activities = await this.hanaService.query<LatestActivityResult & { U_EmpId: string }>(
+      sql,
+      [String(docEntry), ...empIdStrings]
+    );
+
+    // Build state for workers who have activity records
+    for (const activity of activities) {
+      const empId = parseInt(activity.U_EmpId, 10);
+      result.set(empId, this.buildStateFromActivity(activity));
+    }
+
+    // Workers not in result have no activity - they can start
+    for (const empId of empIds) {
+      if (!result.has(empId)) {
+        result.set(empId, {
+          activityCode: null,
+          processType: null,
+          lastActivityTime: null,
+          breakCode: null,
+          canStart: true,
+          canStop: false,
+          canResume: false,
+          canFinish: false,
+        });
+      }
+    }
+
+    return result;
   }
 
   /**
