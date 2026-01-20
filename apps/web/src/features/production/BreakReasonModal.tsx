@@ -9,7 +9,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useI18n } from '@org/shared-i18n';
-import type { BreakReasonDto, ActivityActionResponse } from '@org/shared-types';
+import type { BreakReasonDto, ActivityActionResponse, ActivityStateResponse } from '@org/shared-types';
 import { useApiQuery, useApiPost, useApiQueryClient } from '../../hooks/useApi';
 import {
   Dialog,
@@ -81,13 +81,11 @@ export function BreakReasonModal({
     {
       onSuccess: (data) => {
         setSubmitError(null);
-        // Update activity state in cache
-        queryClient.setQueryData(['activityState', docEntry], {
-          state: data.state,
-          docEntry,
-        });
-        // Invalidate to refresh
-        queryClient.invalidateQueries({ queryKey: ['activityState', docEntry] });
+        // Update activity state in cache (preserve empId from existing data)
+        queryClient.setQueryData<ActivityStateResponse | undefined>(
+          ['activityState', docEntry],
+          (oldData) => oldData ? { ...oldData, state: data.state } : undefined
+        );
         onSuccess();
         onClose();
       },
