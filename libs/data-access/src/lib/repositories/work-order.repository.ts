@@ -239,12 +239,13 @@ export class WorkOrderRepository {
     filters: CalendarWorkOrderFilters
   ): Promise<CalendarWorkOrder[]> {
     const { startDate, endDate, stationCode, status } = filters;
-    const params: QueryParam[] = [startDate, endDate];
+    const params: QueryParam[] = [endDate, startDate];
 
-    // Build WHERE conditions
+    // Build WHERE conditions for date range overlap:
+    // Work order overlaps if it starts before filter ends AND ends after filter starts
     const conditions: string[] = [
-      'T0."StartDate" <= ?',
-      'T0."DueDate" >= ?',
+      'T0."StartDate" <= ?',  // starts before or on filter end date
+      'T0."DueDate" >= ?',    // ends on or after filter start date
     ];
 
     // Filter by status (default: exclude cancelled)
