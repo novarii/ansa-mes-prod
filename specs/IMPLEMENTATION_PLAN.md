@@ -229,7 +229,7 @@ Location: `libs/data-access/src/lib/repositories/`
 ### 5.2 Activity Repository
 
 **activity.repository.ts:**
-- `create(activity)` - Direct SQL INSERT to @ATELIERATTN
+- `create(activity)` - Service Layer `createUDO()` to @ATELIERATTN (registered UDO)
 - `findByWorkOrderAndEmployee(docEntry, empId)` - For state checking
 - `getWorkerCurrentState(docEntry, empId)` - Latest record query
 
@@ -942,9 +942,12 @@ Add ActivityButtons and "Uretimden Giris" button to WorkOrderDetailPage header/a
 
 ---
 
-## Phase 17: Team View Page
+## Phase 17: Team View Page ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-20
+**Tests:** 52 passing (28 MachineCard + 24 TeamPage)
+**Components:** TeamPage, MachineCard
 
 > Reference: `specs/feature-team-calendar.md`
 
@@ -1131,7 +1134,7 @@ Implement:
 1. **Status='R' only** - MES only displays released orders
 2. **Store CODE not text** - Break reasons store code field, not name
 3. **Parameterized queries** - Never interpolate user input in SQL
-4. **Service Layer for B1 writes** - Direct SQL only for UDTs (@tables)
+4. **Service Layer for all writes** - Use `createUDO()` for registered UDOs (check OUDO table), `createUDT()` for plain UDTs - both auto-generate DocEntry
 5. **CSV membership pattern** - Use `',' || field || ',' LIKE '%,' || :id || ',%'` for U_secondEmp checks
 6. **Turkish formatting** - DD.MM.YYYY dates, 1.234,56 numbers, always use locale utilities
 7. **ISO in API, format in UI** - API returns ISO dates/raw numbers, frontend formats for display
@@ -1155,4 +1158,24 @@ Implement:
 | `operational-standards.md` | Bootstrap, error handling, audit |
 | `testing-migration-strategy.md` | Test types, migration phases |
 | `current-mes-data-handbook.md` | Complete SQL queries, table schemas |
+
+---
+
+## Future Work / Production Hardening
+
+Items to address before production deployment:
+
+### Security & SSL
+- [ ] **Service Layer SSL Certificate** - Replace `NODE_TLS_REJECT_UNAUTHORIZED=0` with proper certificate trust:
+  - Export SAP's certificate: `openssl s_client -connect <server>:50000 -showcerts`
+  - Use `NODE_EXTRA_CA_CERTS=/path/to/sap-sl-cert.pem` in production
+  - Alternative: Configure custom HTTPS agent in `ServiceLayerService`
+
+### Performance
+- [ ] **Database connection pooling tuning** - Review pool size for production load
+- [ ] **Service Layer session caching** - Consider session reuse across requests
+
+### Monitoring
+- [ ] **Health checks** - Add /health endpoint for HANA and Service Layer connectivity
+- [ ] **Structured logging** - Production-ready logging with correlation IDs
 

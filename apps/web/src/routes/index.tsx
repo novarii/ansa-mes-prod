@@ -11,10 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { ComponentShowcase } from '../features/dev/ComponentShowcase';
 import { LoginPage, StationSelectPage } from '../features/auth';
 import { WorkOrderListPage, WorkOrderDetailPage } from '../features/work-orders';
-
-function TeamPage(): JSX.Element {
-  return <div data-testid="team-page">Team Page (Phase 17)</div>;
-}
+import { TeamPage } from '../features/team';
 
 function CalendarPage(): JSX.Element {
   return <div data-testid="calendar-page">Calendar Page (Phase 18)</div>;
