@@ -45,16 +45,16 @@ export class AuthService {
    * @throws BadRequestException when input validation fails
    */
   async login(empId: number, pin: string): Promise<LoginResponse> {
-    // Convert empId to string as login code
-    const loginCode = String(empId);
-
-    // Input validation
-    if (!loginCode || loginCode.trim() === '') {
+    // Input validation - validate empId as number first
+    if (!empId || empId <= 0) {
       throw new BadRequestException('Gecersiz calisan numarasi');
     }
     if (!pin || pin.trim() === '') {
       throw new BadRequestException('Sifre gereklidir');
     }
+
+    // Convert empId to string as login code
+    const loginCode = String(empId);
 
     // Find employee by login code (U_password field)
     const employee = await this.employeeRepository.findByLoginCode(loginCode);
@@ -67,10 +67,11 @@ export class AuthService {
       throw new UnauthorizedException('Gecersiz kimlik bilgileri');
     }
 
-    // Get authorized station count using actual empID
+    // Get authorized station count using U_password (login code)
+    // IMPORTANT: ORSC.U_secondEmp contains U_password values, NOT empIDs!
     const machines =
       await this.resourceRepository.findAuthorizedMachinesForWorker(
-        employee.empID
+        employee.U_password
       );
 
     const empName = `${employee.firstName} ${employee.lastName}`;
@@ -86,9 +87,12 @@ export class AuthService {
   /**
    * Get list of authorized stations for an employee
    *
+   * IMPORTANT: Authorization is based on U_password (login code), NOT empID!
+   * We must first look up the employee to get their U_password.
+   *
    * @param empId - Employee ID
    * @returns List of authorized stations
-   * @throws BadRequestException when empId is invalid
+   * @throws BadRequestException when empId is invalid or employee not found
    */
   async getAuthorizedStations(
     empId: number
@@ -98,8 +102,17 @@ export class AuthService {
       throw new BadRequestException('Gecersiz calisan numarasi');
     }
 
+    // Look up employee to get their U_password (login code)
+    const employee = await this.employeeRepository.findByIdWithPassword(empId);
+    if (!employee || !employee.U_password) {
+      throw new BadRequestException('Calisan bulunamadi');
+    }
+
+    // Get machines using U_password (login code), NOT empID!
     const machines =
-      await this.resourceRepository.findAuthorizedMachinesForWorker(empId);
+      await this.resourceRepository.findAuthorizedMachinesForWorker(
+        employee.U_password
+      );
 
     const stations: StationOption[] = machines.map((machine) => ({
       code: machine.ResCode,
@@ -115,6 +128,8 @@ export class AuthService {
 
   /**
    * Select a station and create session
+   *
+   * IMPORTANT: Authorization is based on U_password (login code), NOT empID!
    *
    * @param empId - Employee ID
    * @param stationCode - Machine ResCode to select
@@ -134,10 +149,16 @@ export class AuthService {
       throw new BadRequestException('Istasyon kodu gereklidir');
     }
 
-    // Check authorization first
+    // Get employee details first (need U_password for authorization)
+    const employee = await this.employeeRepository.findByIdWithPassword(empId);
+    if (!employee || !employee.U_password) {
+      throw new BadRequestException('Calisan bulunamadi');
+    }
+
+    // Check authorization using U_password (login code), NOT empID!
     const isAuthorized =
       await this.resourceRepository.isWorkerAuthorizedForMachine(
-        empId,
+        employee.U_password,
         stationCode
       );
     if (!isAuthorized) {
@@ -152,14 +173,8 @@ export class AuthService {
       throw new BadRequestException('Istasyon bulunamadi');
     }
 
-    // Get employee details
-    const employee = await this.employeeRepository.findById(empId);
-    if (!employee) {
-      throw new BadRequestException('Calisan bulunamadi');
-    }
-
-    // Determine if this is the worker's default station
-    const isDefaultWorker = machine.U_defaultEmp === String(empId);
+    // Determine if this is the worker's default station (compare with U_password)
+    const isDefaultWorker = machine.U_defaultEmp === employee.U_password;
 
     // Create session
     const empName = `${employee.firstName} ${employee.lastName}`;

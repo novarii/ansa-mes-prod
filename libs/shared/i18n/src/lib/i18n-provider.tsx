@@ -27,9 +27,10 @@ export interface I18nContextValue {
   /**
    * Translate a key to its localized value
    * @param key - Dot-notation key path (e.g., 'common.actions.save')
+   * @param params - Optional interpolation parameters (e.g., { count: 5 })
    * @returns Translated string or the key itself if not found
    */
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 
   /**
    * Format a date as DD.MM.YYYY
@@ -127,11 +128,22 @@ export function I18nProvider({
       translations[locale as keyof typeof translations] || translations['tr-TR'];
 
     /**
-     * Translate a key to its localized value
+     * Translate a key to its localized value with optional interpolation
      */
-    const t = (key: string): string => {
-      const result = getNestedValue(currentTranslations, key);
-      return result ?? key;
+    const t = (key: string, params?: Record<string, string | number>): string => {
+      let result = getNestedValue(currentTranslations, key) ?? key;
+
+      // Handle interpolation: replace {{key}} with params[key]
+      if (params) {
+        for (const [paramKey, paramValue] of Object.entries(params)) {
+          result = result.replace(
+            new RegExp(`\\{\\{${paramKey}\\}\\}`, 'g'),
+            String(paramValue)
+          );
+        }
+      }
+
+      return result;
     };
 
     return {

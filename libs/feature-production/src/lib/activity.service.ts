@@ -7,6 +7,8 @@ import {
   ActivityRepository,
   BreakReasonRepository,
   WorkOrderRepository,
+  ResourceRepository,
+  EmployeeRepository,
 } from '@org/data-access';
 import {
   ActivityProcessType,
@@ -17,6 +19,9 @@ import {
   ActivityHistoryResponse,
   ActivityLogEntry,
   CreateActivity,
+  ActivityActionMultiResponse,
+  ActivityActionResult,
+  WorkerForSelection,
 } from '@org/shared-types';
 
 /**
@@ -32,7 +37,9 @@ export class ActivityService {
   constructor(
     private readonly activityRepository: ActivityRepository,
     private readonly breakReasonRepository: BreakReasonRepository,
-    private readonly workOrderRepository: WorkOrderRepository
+    private readonly workOrderRepository: WorkOrderRepository,
+    private readonly resourceRepository: ResourceRepository,
+    private readonly employeeRepository: EmployeeRepository
   ) {}
 
   /**
@@ -302,6 +309,258 @@ export class ActivityService {
     return {
       docEntry,
       entries,
+    };
+  }
+
+  // ==================== Multi-Employee Operations ====================
+
+  /**
+   * Get all workers authorized to work on a machine
+   *
+   * @param resCode - Machine/resource code
+   * @returns Array of workers with their authorization status
+   */
+  async getWorkersForMachine(resCode: string): Promise<WorkerForSelection[]> {
+    this.validateResCode(resCode);
+
+    const workers = await this.resourceRepository.findWorkersForMachine(resCode);
+
+    return workers.map((worker) => ({
+      empID: worker.empID,
+      firstName: worker.firstName,
+      lastName: worker.lastName,
+      IsDefault: worker.IsDefault,
+      currentState: null, // Will be populated if needed
+    }));
+  }
+
+  /**
+   * Get active workers (BAS or DEV state) on a work order
+   *
+   * @param docEntry - Work order DocEntry
+   * @param resCode - Machine/resource code
+   * @returns Array of workers who have active work on this order
+   */
+  async getActiveWorkersForWorkOrder(
+    docEntry: number,
+    resCode: string
+  ): Promise<WorkerForSelection[]> {
+    this.validateDocEntry(docEntry);
+    this.validateResCode(resCode);
+    await this.verifyWorkOrderExists(docEntry);
+
+    // Get all authorized workers for the machine
+    const allWorkers = await this.resourceRepository.findWorkersForMachine(resCode);
+
+    // Get current state for each worker on this work order
+    const workersWithState: WorkerForSelection[] = [];
+
+    for (const worker of allWorkers) {
+      const state = await this.activityRepository.getWorkerCurrentState(
+        docEntry,
+        worker.empID
+      );
+
+      // Only include workers with active state (BAS or DEV)
+      if (state.processType === 'BAS' || state.processType === 'DEV') {
+        workersWithState.push({
+          empID: worker.empID,
+          firstName: worker.firstName,
+          lastName: worker.lastName,
+          IsDefault: worker.IsDefault,
+          currentState: state.processType,
+        });
+      }
+    }
+
+    return workersWithState;
+  }
+
+  /**
+   * Start work for multiple employees (BAS)
+   *
+   * Creates one activity record per employee.
+   * Validates each employee can start work before creating records.
+   *
+   * @param docEntry - Work order DocEntry
+   * @param empIds - Array of employee IDs
+   * @param resCode - Machine/resource code
+   * @returns Multi-action response with results for each employee
+   */
+  async startWorkMultiple(
+    docEntry: number,
+    empIds: number[],
+    resCode: string
+  ): Promise<ActivityActionMultiResponse> {
+    this.validateDocEntry(docEntry);
+    this.validateResCode(resCode);
+
+    if (!empIds || empIds.length === 0) {
+      throw new BadRequestException('At least one employee ID is required');
+    }
+
+    await this.verifyWorkOrderExists(docEntry);
+
+    // Get employee names for the response
+    const employees = await this.employeeRepository.findByIds(empIds);
+    const employeeMap = new Map(employees.map((e) => [e.empID, e.fullName]));
+
+    const results: ActivityActionResult[] = [];
+    const timestamp = new Date().toISOString();
+
+    for (const empId of empIds) {
+      try {
+        this.validateEmpId(empId);
+
+        const currentState = await this.activityRepository.getWorkerCurrentState(
+          docEntry,
+          empId
+        );
+
+        if (!currentState.canStart) {
+          results.push({
+            empId,
+            empName: employeeMap.get(empId) ?? `Employee ${empId}`,
+            activityCode: '',
+            success: false,
+            error: 'Work is already in progress or paused',
+          });
+          continue;
+        }
+
+        const { activity } = await this.createActivity(
+          docEntry,
+          empId,
+          resCode,
+          'BAS',
+          null,
+          null
+        );
+
+        results.push({
+          empId,
+          empName: employeeMap.get(empId) ?? `Employee ${empId}`,
+          activityCode: activity.Code,
+          success: true,
+        });
+      } catch (error) {
+        results.push({
+          empId,
+          empName: employeeMap.get(empId) ?? `Employee ${empId}`,
+          activityCode: '',
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return {
+      success: results.every((r) => r.success),
+      processType: 'BAS',
+      timestamp,
+      results,
+    };
+  }
+
+  /**
+   * Stop work for multiple employees (DUR)
+   *
+   * Creates one activity record per employee with the same break code.
+   * Validates each employee can stop work before creating records.
+   *
+   * @param docEntry - Work order DocEntry
+   * @param empIds - Array of employee IDs
+   * @param resCode - Machine/resource code
+   * @param breakCode - Break reason code (required)
+   * @param notes - Optional notes
+   * @returns Multi-action response with results for each employee
+   */
+  async stopWorkMultiple(
+    docEntry: number,
+    empIds: number[],
+    resCode: string,
+    breakCode: string,
+    notes?: string
+  ): Promise<ActivityActionMultiResponse> {
+    this.validateDocEntry(docEntry);
+    this.validateResCode(resCode);
+
+    if (!empIds || empIds.length === 0) {
+      throw new BadRequestException('At least one employee ID is required');
+    }
+
+    if (!breakCode || breakCode.trim() === '') {
+      throw new BadRequestException(
+        'Break reason code is required when stopping work'
+      );
+    }
+
+    await this.verifyWorkOrderExists(docEntry);
+
+    // Validate break code exists
+    const breakReason = await this.breakReasonRepository.findByCode(breakCode);
+    if (!breakReason) {
+      throw new BadRequestException(`Invalid break reason code: ${breakCode}`);
+    }
+
+    // Get employee names for the response
+    const employees = await this.employeeRepository.findByIds(empIds);
+    const employeeMap = new Map(employees.map((e) => [e.empID, e.fullName]));
+
+    const results: ActivityActionResult[] = [];
+    const timestamp = new Date().toISOString();
+
+    for (const empId of empIds) {
+      try {
+        this.validateEmpId(empId);
+
+        const currentState = await this.activityRepository.getWorkerCurrentState(
+          docEntry,
+          empId
+        );
+
+        if (!currentState.canStop) {
+          results.push({
+            empId,
+            empName: employeeMap.get(empId) ?? `Employee ${empId}`,
+            activityCode: '',
+            success: false,
+            error: 'Work must be started or resumed before stopping',
+          });
+          continue;
+        }
+
+        const { activity } = await this.createActivity(
+          docEntry,
+          empId,
+          resCode,
+          'DUR',
+          breakCode,
+          notes ?? null
+        );
+
+        results.push({
+          empId,
+          empName: employeeMap.get(empId) ?? `Employee ${empId}`,
+          activityCode: activity.Code,
+          success: true,
+        });
+      } catch (error) {
+        results.push({
+          empId,
+          empName: employeeMap.get(empId) ?? `Employee ${empId}`,
+          activityCode: '',
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    return {
+      success: results.every((r) => r.success),
+      processType: 'DUR',
+      timestamp,
+      results,
     };
   }
 

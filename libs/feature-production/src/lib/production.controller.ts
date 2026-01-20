@@ -18,6 +18,10 @@ import type {
   FinishActivityRequest,
   ProductionEntryRequest,
   ProductionEntryResponse,
+  StartActivityMultiRequest,
+  StopActivityMultiRequest,
+  ActivityActionMultiResponse,
+  WorkerForSelection,
 } from '@org/shared-types';
 import { ActivityService } from './activity.service';
 import { ProductionEntryService } from './production-entry.service';
@@ -33,6 +37,12 @@ import { BreakReasonService, BreakReasonDto } from './break-reason.service';
  * - POST /work-orders/:docEntry/activity/resume - Resume work (DEV)
  * - POST /work-orders/:docEntry/activity/finish - Finish work (BIT)
  * - GET /work-orders/:docEntry/activity-history - Activity log
+ *
+ * Multi-Employee Activity Endpoints:
+ * - GET /workers - Get authorized workers for current machine
+ * - GET /work-orders/:docEntry/active-workers - Get workers with active state
+ * - POST /work-orders/:docEntry/activity/start-multi - Start work for multiple employees
+ * - POST /work-orders/:docEntry/activity/stop-multi - Stop work for multiple employees
  *
  * Production Entry Endpoints:
  * - POST /work-orders/:docEntry/production-entry - Report quantities
@@ -169,6 +179,106 @@ export class ProductionController {
     @Param('docEntry', ParseIntPipe) docEntry: number
   ): Promise<ActivityHistoryResponse> {
     return this.activityService.getActivityHistory(docEntry);
+  }
+
+  // ==================== Multi-Employee Activity Endpoints ====================
+
+  /**
+   * Get all workers authorized to work on the current machine
+   *
+   * Used for employee selection modal when starting work.
+   *
+   * @param user - Current user session (provides stationCode)
+   */
+  @Get('workers')
+  async getWorkersForMachine(
+    @CurrentUser() user: MESSession
+  ): Promise<WorkerForSelection[]> {
+    this.validateStationSelected(user);
+    return this.activityService.getWorkersForMachine(user.stationCode);
+  }
+
+  /**
+   * Get workers with active activity state on a work order
+   *
+   * Used for employee selection modal when stopping work.
+   * Only returns workers who have BAS or DEV state (active work).
+   *
+   * @param user - Current user session
+   * @param docEntry - Work order DocEntry
+   */
+  @Get('work-orders/:docEntry/active-workers')
+  async getActiveWorkers(
+    @CurrentUser() user: MESSession,
+    @Param('docEntry', ParseIntPipe) docEntry: number
+  ): Promise<WorkerForSelection[]> {
+    this.validateStationSelected(user);
+    return this.activityService.getActiveWorkersForWorkOrder(
+      docEntry,
+      user.stationCode
+    );
+  }
+
+  /**
+   * Start work for multiple employees (BAS)
+   *
+   * Creates activity records for each employee in the list.
+   *
+   * @param user - Current user session
+   * @param docEntry - Work order DocEntry
+   * @param body - Request with array of employee IDs
+   */
+  @Post('work-orders/:docEntry/activity/start-multi')
+  async startActivityMulti(
+    @CurrentUser() user: MESSession,
+    @Param('docEntry', ParseIntPipe) docEntry: number,
+    @Body() body: StartActivityMultiRequest
+  ): Promise<ActivityActionMultiResponse> {
+    this.validateStationSelected(user);
+
+    if (!body.empIds || body.empIds.length === 0) {
+      throw new BadRequestException('En az bir çalışan seçilmelidir');
+    }
+
+    return this.activityService.startWorkMultiple(
+      docEntry,
+      body.empIds,
+      user.stationCode
+    );
+  }
+
+  /**
+   * Stop work for multiple employees (DUR)
+   *
+   * Creates activity records for each employee in the list with the break reason.
+   *
+   * @param user - Current user session
+   * @param docEntry - Work order DocEntry
+   * @param body - Request with array of employee IDs, break code, and optional notes
+   */
+  @Post('work-orders/:docEntry/activity/stop-multi')
+  async stopActivityMulti(
+    @CurrentUser() user: MESSession,
+    @Param('docEntry', ParseIntPipe) docEntry: number,
+    @Body() body: StopActivityMultiRequest
+  ): Promise<ActivityActionMultiResponse> {
+    this.validateStationSelected(user);
+
+    if (!body.empIds || body.empIds.length === 0) {
+      throw new BadRequestException('En az bir çalışan seçilmelidir');
+    }
+
+    if (!body.breakCode || body.breakCode.trim() === '') {
+      throw new BadRequestException('Mola nedeni seçimi gereklidir');
+    }
+
+    return this.activityService.stopWorkMultiple(
+      docEntry,
+      body.empIds,
+      user.stationCode,
+      body.breakCode,
+      body.notes
+    );
   }
 
   // ==================== Production Entry Endpoints ====================

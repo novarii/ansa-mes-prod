@@ -2,12 +2,13 @@
  * ActivityButtons Component
  *
  * Displays activity control buttons (Start/Stop/Resume/Finish) based on
- * the current worker's activity state on a work order.
+ * both the current worker's state AND overall work order activity.
  *
- * State transitions:
- * - No state / BIT: Can Start (BAS)
- * - BAS / DEV: Can Stop (DUR) or Finish (BIT)
- * - DUR: Can Resume (DEV) or Finish (BIT)
+ * Button visibility:
+ * - Start: Always visible (can always start more workers)
+ * - Stop: Visible if there are ANY active workers on the work order
+ * - Resume: Visible if current user is paused (DUR)
+ * - Finish: Visible if current user has active or paused state
  *
  * @see specs/feature-production.md
  */
@@ -18,18 +19,21 @@ import type {
   ActivityStateResponse,
   ActivityActionResponse,
   WorkerActivityState,
+  WorkerForSelection,
 } from '@org/shared-types';
 import { useApiQuery, useApiPost, useApiQueryClient } from '../../hooks/useApi';
 import { Button } from '../../components/ui/button';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Spinner } from '../../components';
-import { Play, Pause, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react';
+import { Play, Pause, RotateCcw, CheckCircle, AlertCircle, Users } from 'lucide-react';
 
 export interface ActivityButtonsProps {
   /** Work order DocEntry */
   docEntry: number;
-  /** Callback when stop action requires break reason selection */
-  onBreakReasonRequired: () => void;
+  /** Callback when start action requires employee selection */
+  onStartEmployeesRequired: () => void;
+  /** Callback when stop action requires employee and break reason selection */
+  onStopEmployeesRequired: () => void;
   /** Optional callback when activity state changes */
   onStateChange?: (state: WorkerActivityState) => void;
 }
@@ -41,41 +45,35 @@ export interface ActivityButtonsProps {
  */
 export function ActivityButtons({
   docEntry,
-  onBreakReasonRequired,
+  onStartEmployeesRequired,
+  onStopEmployeesRequired,
   onStateChange,
 }: ActivityButtonsProps): React.ReactElement {
   const { t } = useI18n();
   const queryClient = useApiQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Fetch current activity state
+  // Fetch current activity state (for current user's Resume/Finish buttons)
   const {
     data: stateResponse,
-    isLoading,
+    isLoading: isStateLoading,
     error: fetchError,
   } = useApiQuery<ActivityStateResponse>(
     ['activityState', docEntry],
     `/work-orders/${docEntry}/activity-state`
   );
 
-  // Mutation for start action
-  const startMutation = useApiPost<ActivityActionResponse, Record<string, never>>(
-    `/work-orders/${docEntry}/activity/start`,
-    {
-      onSuccess: (data) => {
-        setActionError(null);
-        queryClient.setQueryData(['activityState', docEntry], {
-          state: data.state,
-          docEntry,
-          empId: stateResponse?.empId,
-        });
-        onStateChange?.(data.state);
-      },
-      onError: (error) => {
-        setActionError(error.message);
-      },
-    }
+  // Fetch active workers (for Stop button visibility)
+  const {
+    data: activeWorkers,
+    isLoading: isWorkersLoading,
+  } = useApiQuery<WorkerForSelection[]>(
+    ['activeWorkers', docEntry],
+    `/work-orders/${docEntry}/active-workers`
   );
+
+  const isLoading = isStateLoading || isWorkersLoading;
+  const hasActiveWorkers = (activeWorkers?.length ?? 0) > 0;
 
   // Mutation for resume action
   const resumeMutation = useApiPost<ActivityActionResponse, Record<string, never>>(
@@ -119,14 +117,14 @@ export function ActivityButtons({
 
   // Action handlers
   const handleStart = useCallback(() => {
-    setActionError(null);
-    startMutation.mutate({});
-  }, [startMutation]);
+    // Start requires employee selection via modal
+    onStartEmployeesRequired();
+  }, [onStartEmployeesRequired]);
 
   const handleStop = useCallback(() => {
-    // Stop requires break reason selection via modal
-    onBreakReasonRequired();
-  }, [onBreakReasonRequired]);
+    // Stop requires employee and break reason selection via modal
+    onStopEmployeesRequired();
+  }, [onStopEmployeesRequired]);
 
   const handleResume = useCallback(() => {
     setActionError(null);
@@ -139,8 +137,7 @@ export function ActivityButtons({
   }, [finishMutation]);
 
   // Determine if any action is in progress
-  const isActionPending =
-    startMutation.isPending || resumeMutation.isPending || finishMutation.isPending;
+  const isActionPending = resumeMutation.isPending || finishMutation.isPending;
 
   // Loading state
   if (isLoading) {
@@ -179,6 +176,14 @@ export function ActivityButtons({
     );
   }
 
+  // Button visibility logic:
+  // - Start: Always available (can start more workers)
+  // - Stop: Show if there are ANY active workers (not just current user)
+  // - Resume: Current user's personal state
+  // - Finish: Current user's personal state
+  const canShowStart = true; // Always allow starting more workers
+  const canShowStop = hasActiveWorkers; // Show if any workers are active
+
   return (
     <div className="space-y-3" data-testid="activity-buttons">
       {/* Action error alert */}
@@ -191,25 +196,21 @@ export function ActivityButtons({
 
       {/* Button group */}
       <div className="flex flex-wrap gap-2">
-        {/* Start button - green */}
-        {state.canStart && (
+        {/* Start button - green (opens employee selection modal) */}
+        {canShowStart && (
           <Button
             variant="default"
             onClick={handleStart}
             disabled={isActionPending}
             className="bg-green-600 hover:bg-green-700"
           >
-            {startMutation.isPending ? (
-              <Spinner size="sm" className="mr-2" />
-            ) : (
-              <Play className="mr-2 size-4" />
-            )}
+            <Play className="mr-2 size-4" />
             {t('workOrders.actions.start')}
           </Button>
         )}
 
-        {/* Stop button - orange */}
-        {state.canStop && (
+        {/* Stop button - orange (visible if ANY workers are active) */}
+        {canShowStop && (
           <Button
             variant="default"
             onClick={handleStop}
@@ -255,7 +256,17 @@ export function ActivityButtons({
         )}
       </div>
 
-      {/* Current state indicator */}
+      {/* Active workers indicator */}
+      {hasActiveWorkers && (
+        <div className="flex items-center gap-2 text-sm text-green-600">
+          <Users className="size-4" />
+          <span className="font-medium">
+            {t('production.employeeSelect.activeWorkers', { count: activeWorkers?.length ?? 0 })}
+          </span>
+        </div>
+      )}
+
+      {/* Current user state indicator */}
       {state.processType && (
         <div className="text-sm text-muted-foreground">
           {t('production.activity.currentState')}:{' '}

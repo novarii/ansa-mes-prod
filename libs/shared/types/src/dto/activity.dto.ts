@@ -103,3 +103,71 @@ export interface ActivityHistoryResponse {
   /** List of activity entries */
   entries: ActivityLogEntry[];
 }
+
+// ==================== Multi-Employee Activity DTOs ====================
+
+/**
+ * Start activity request for multiple employees (BAS)
+ */
+export interface StartActivityMultiRequest {
+  /** Array of employee IDs to start work */
+  empIds: number[];
+}
+
+/**
+ * Stop activity request for multiple employees (DUR) - requires break code
+ */
+export interface StopActivityMultiRequest {
+  /** Array of employee IDs to stop work */
+  empIds: number[];
+  /** Break reason code (required) */
+  breakCode: string;
+  /** Optional notes/comments */
+  notes?: string;
+}
+
+/**
+ * Result for a single employee in a multi-employee action
+ */
+export interface ActivityActionResult {
+  /** Employee ID */
+  empId: number;
+  /** Employee name */
+  empName: string;
+  /** Created activity code */
+  activityCode: string;
+  /** Whether the action was successful */
+  success: boolean;
+  /** Error message if failed */
+  error?: string;
+}
+
+/**
+ * Response for multi-employee activity actions
+ */
+export interface ActivityActionMultiResponse {
+  /** Whether all actions were successful */
+  success: boolean;
+  /** Process type of the created activities */
+  processType: ActivityProcessType;
+  /** Timestamp of the action */
+  timestamp: string;
+  /** Results for each employee */
+  results: ActivityActionResult[];
+}
+
+/**
+ * Worker info for employee selection (from ORSC authorization)
+ */
+export interface WorkerForSelection {
+  /** Employee ID */
+  empID: number;
+  /** First name */
+  firstName: string;
+  /** Last name */
+  lastName: string;
+  /** Whether this is the default/primary worker for the machine */
+  IsDefault: boolean;
+  /** Current activity state (if any) - for stop modal filtering */
+  currentState?: ActivityProcessType | null;
+}

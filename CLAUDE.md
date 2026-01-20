@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ Critical: Employee Authorization Quirk
+
+Machine authorization uses `OHEM.U_password` (login code), NOT `empID`. The fields `ORSC.U_defaultEmp` and `ORSC.U_secondEmp` contain `U_password` values. See `specs/user-permission-model.md` for details.
+
 ## Build and Development Commands
 
 All tasks should be run through Nx rather than underlying tooling directly:

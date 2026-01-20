@@ -1,16 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ActivityRepository } from './activity.repository';
 import { HanaService } from '../hana.service';
+import { ServiceLayerService } from '../service-layer.service';
 import { Activity, ActivityWithDetails, WorkerActivityState } from '@org/shared-types';
 
 describe('ActivityRepository', () => {
   let repository: ActivityRepository;
   let hanaService: jest.Mocked<HanaService>;
+  let serviceLayerService: jest.Mocked<ServiceLayerService>;
 
   const mockHanaService = {
     query: jest.fn(),
     queryOne: jest.fn(),
     execute: jest.fn(),
+  };
+
+  const mockServiceLayerService = {
+    createUDO: jest.fn(),
+    updateUDO: jest.fn(),
+    getUDO: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -23,11 +31,16 @@ describe('ActivityRepository', () => {
           provide: HanaService,
           useValue: mockHanaService,
         },
+        {
+          provide: ServiceLayerService,
+          useValue: mockServiceLayerService,
+        },
       ],
     }).compile();
 
     repository = module.get<ActivityRepository>(ActivityRepository);
     hanaService = module.get(HanaService);
+    serviceLayerService = module.get(ServiceLayerService);
   });
 
   describe('create', () => {
@@ -41,19 +54,27 @@ describe('ActivityRepository', () => {
       U_Aciklama: null,
     };
 
-    it('should insert activity record and return the created activity', async () => {
-      hanaService.execute.mockResolvedValue({ affectedRows: 1 });
+    it('should create activity via Service Layer and return the created activity', async () => {
+      serviceLayerService.createUDO.mockResolvedValue({ Code: 'mock-uuid' });
 
       const result = await repository.create(createActivityData);
 
-      expect(hanaService.execute).toHaveBeenCalledTimes(1);
-
-      const sql = hanaService.execute.mock.calls[0][0] as string;
-      expect(sql).toContain('INSERT INTO "@ATELIERATTN"');
-      expect(sql).toContain('"Code"');
-      expect(sql).toContain('"Name"');
-      expect(sql).toContain('"U_WorkOrder"');
-      expect(sql).toContain('"U_ProcType"');
+      expect(serviceLayerService.createUDO).toHaveBeenCalledTimes(1);
+      expect(serviceLayerService.createUDO).toHaveBeenCalledWith(
+        'ATELIERATTN',
+        expect.objectContaining({
+          Code: expect.any(String),
+          Name: expect.any(String),
+          U_WorkOrder: '1001',
+          U_ResCode: '1001 - BARMAG 1',
+          U_EmpId: '200',
+          U_ProcType: 'BAS',
+          U_Start: '2026-01-18',
+          U_StartTime: 800, // 08:00 as HHMM
+          U_BreakCode: null,
+          U_Aciklama: null,
+        })
+      );
 
       // Should return an activity with generated Code and Name
       expect(result.Code).toBeDefined();
@@ -63,7 +84,7 @@ describe('ActivityRepository', () => {
     });
 
     it('should generate UUID for Code field', async () => {
-      hanaService.execute.mockResolvedValue({ affectedRows: 1 });
+      serviceLayerService.createUDO.mockResolvedValue({ Code: 'mock-uuid' });
 
       const result = await repository.create(createActivityData);
 
@@ -74,7 +95,7 @@ describe('ActivityRepository', () => {
     });
 
     it('should include break code when provided for DUR action', async () => {
-      hanaService.execute.mockResolvedValue({ affectedRows: 1 });
+      serviceLayerService.createUDO.mockResolvedValue({ Code: 'mock-uuid' });
 
       const durActivity = {
         ...createActivityData,
@@ -85,9 +106,13 @@ describe('ActivityRepository', () => {
 
       await repository.create(durActivity);
 
-      const params = hanaService.execute.mock.calls[0][1] as unknown[];
-      expect(params).toContain('73');
-      expect(params).toContain('Personel degisimi');
+      expect(serviceLayerService.createUDO).toHaveBeenCalledWith(
+        'ATELIERATTN',
+        expect.objectContaining({
+          U_BreakCode: '73',
+          U_Aciklama: 'Personel degisimi',
+        })
+      );
     });
   });
 

@@ -5,6 +5,8 @@ import {
   ActivityRepository,
   BreakReasonRepository,
   WorkOrderRepository,
+  ResourceRepository,
+  EmployeeRepository,
 } from '@org/data-access';
 import {
   WorkerActivityState,
@@ -36,6 +38,20 @@ describe('ActivityService', () => {
     findByDocEntry: jest.fn(),
     findAll: jest.fn(),
     findCustomersWithActiveOrders: jest.fn(),
+  };
+
+  const mockResourceRepository = {
+    findWorkersForMachine: jest.fn(),
+    findAuthorizedMachinesForWorker: jest.fn(),
+    isWorkerAuthorizedForMachine: jest.fn(),
+    findAllMachines: jest.fn(),
+  };
+
+  const mockEmployeeRepository = {
+    findByIds: jest.fn(),
+    findById: jest.fn(),
+    findByLoginCode: jest.fn(),
+    findAll: jest.fn(),
   };
 
   const mockWorkOrder = {
@@ -134,6 +150,14 @@ describe('ActivityService', () => {
         {
           provide: WorkOrderRepository,
           useValue: mockWorkOrderRepository,
+        },
+        {
+          provide: ResourceRepository,
+          useValue: mockResourceRepository,
+        },
+        {
+          provide: EmployeeRepository,
+          useValue: mockEmployeeRepository,
         },
       ],
     }).compile();

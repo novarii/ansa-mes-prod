@@ -28,21 +28,22 @@ export class ResourceRepository {
   /**
    * Find all machines that a worker is authorized to access
    *
-   * Uses the CSV membership pattern to check U_secondEmp field:
-   * ',' || "U_secondEmp" || ',' LIKE '%,' || :empID || ',%'
+   * IMPORTANT: Uses loginCode (U_password), NOT empID!
+   * The ORSC.U_defaultEmp and ORSC.U_secondEmp fields contain U_password values.
    *
-   * @param empId - Employee ID
+   * Uses the CSV membership pattern to check U_secondEmp field:
+   * ',' || "U_secondEmp" || ',' LIKE '%,' || :loginCode || ',%'
+   *
+   * @param loginCode - Worker's login code (from OHEM.U_password)
    * @returns Array of machines with authorization status
    *
    * @example
-   * const machines = await resourceRepo.findAuthorizedMachinesForWorker(200);
-   * // Returns machines where empId 200 is in U_secondEmp or U_defaultEmp
+   * const machines = await resourceRepo.findAuthorizedMachinesForWorker('200');
+   * // Returns machines where '200' is in U_secondEmp or U_defaultEmp
    */
   async findAuthorizedMachinesForWorker(
-    empId: number
+    loginCode: string
   ): Promise<MachineWithAuthStatus[]> {
-    const empIdStr = String(empId);
-
     const sql = `
       SELECT
         "ResCode",
@@ -65,14 +66,17 @@ export class ResourceRepository {
     `;
 
     return this.hanaService.query<MachineWithAuthStatus>(sql, [
-      empIdStr,
-      empIdStr,
-      empIdStr,
+      loginCode,
+      loginCode,
+      loginCode,
     ]);
   }
 
   /**
    * Find all workers authorized for a specific machine
+   *
+   * IMPORTANT: Authorization is based on U_password, NOT empID!
+   * The ORSC.U_defaultEmp and ORSC.U_secondEmp fields contain U_password values.
    *
    * @param resCode - Machine resource code
    * @returns Array of workers with their authorization status
@@ -84,13 +88,17 @@ export class ResourceRepository {
         e."firstName",
         e."lastName",
         CASE
-          WHEN r."U_defaultEmp" = CAST(e."empID" AS VARCHAR) THEN TRUE
+          WHEN r."U_defaultEmp" = e."U_password" THEN TRUE
           ELSE FALSE
         END AS "IsDefault"
       FROM "OHEM" e
       INNER JOIN "ORSC" r ON r."ResType" = 'M' AND r."ResCode" = ?
-      WHERE ',' || r."U_secondEmp" || ',' LIKE '%,' || CAST(e."empID" AS VARCHAR) || ',%'
-         OR r."U_defaultEmp" = CAST(e."empID" AS VARCHAR)
+      WHERE e."Active" = 'Y'
+        AND e."U_password" IS NOT NULL
+        AND (
+          ',' || r."U_secondEmp" || ',' LIKE '%,' || e."U_password" || ',%'
+          OR r."U_defaultEmp" = e."U_password"
+        )
       ORDER BY "IsDefault" DESC, e."lastName", e."firstName"
     `;
 
@@ -100,16 +108,17 @@ export class ResourceRepository {
   /**
    * Check if a worker is authorized for a specific machine
    *
-   * @param empId - Employee ID
+   * IMPORTANT: Uses loginCode (U_password), NOT empID!
+   * The ORSC.U_defaultEmp and ORSC.U_secondEmp fields contain U_password values.
+   *
+   * @param loginCode - Worker's login code (from OHEM.U_password)
    * @param resCode - Machine resource code
    * @returns True if authorized, false otherwise
    */
   async isWorkerAuthorizedForMachine(
-    empId: number,
+    loginCode: string,
     resCode: string
   ): Promise<boolean> {
-    const empIdStr = String(empId);
-
     const sql = `
       SELECT COUNT(*) AS "count"
       FROM "ORSC"
@@ -123,8 +132,8 @@ export class ResourceRepository {
 
     const result = await this.hanaService.queryOne<{ count: number }>(sql, [
       resCode,
-      empIdStr,
-      empIdStr,
+      loginCode,
+      loginCode,
     ]);
 
     return (result?.count ?? 0) > 0;
@@ -158,6 +167,8 @@ export class ResourceRepository {
    * For team view, use findAllAssignedWorkers() which uses OHEM.U_mainStation
    * to show WHO IS CURRENTLY assigned to a machine.
    *
+   * IMPORTANT: Authorization is based on U_password, NOT empID!
+   *
    * @returns Array of workers with their machine capability
    */
   async findAllWorkersForAllMachines(): Promise<
@@ -170,13 +181,17 @@ export class ResourceRepository {
         e."firstName",
         e."lastName",
         CASE
-          WHEN r."U_defaultEmp" = CAST(e."empID" AS VARCHAR) THEN TRUE
+          WHEN r."U_defaultEmp" = e."U_password" THEN TRUE
           ELSE FALSE
         END AS "IsDefault"
       FROM "OHEM" e
       INNER JOIN "ORSC" r ON r."ResType" = 'M'
-      WHERE ',' || r."U_secondEmp" || ',' LIKE '%,' || CAST(e."empID" AS VARCHAR) || ',%'
-         OR r."U_defaultEmp" = CAST(e."empID" AS VARCHAR)
+      WHERE e."Active" = 'Y'
+        AND e."U_password" IS NOT NULL
+        AND (
+          ',' || r."U_secondEmp" || ',' LIKE '%,' || e."U_password" || ',%'
+          OR r."U_defaultEmp" = e."U_password"
+        )
       ORDER BY r."ResCode", "IsDefault" DESC, e."lastName", e."firstName"
     `;
 

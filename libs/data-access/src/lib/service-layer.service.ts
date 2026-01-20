@@ -185,12 +185,21 @@ export class ServiceLayerService {
     }
 
     if (!response.ok) {
-      const error = (await response.json()) as ServiceLayerError;
-      const message = error?.error?.message?.value || 'Service Layer request failed';
+      let message = 'Service Layer request failed';
+      let errorBody: unknown;
+      try {
+        errorBody = await response.json();
+        const slError = errorBody as ServiceLayerError;
+        message = slError?.error?.message?.value || JSON.stringify(errorBody);
+      } catch {
+        // Response wasn't JSON
+        errorBody = await response.text().catch(() => 'Unable to read response');
+      }
       this.logger.error(`Service Layer error: ${message}`, {
         method,
         endpoint,
         status: response.status,
+        body: errorBody,
       });
       throw new Error(message);
     }
@@ -361,5 +370,56 @@ export class ServiceLayerService {
     data: unknown
   ): Promise<void> {
     await this.request('PATCH', `/U_${tableName}('${code}')`, data);
+  }
+
+  // ==================== User-Defined Objects (UDO) ====================
+  // UDOs are UDTs registered in OUDO table. They use /{UDOCode} endpoint
+  // (no U_ prefix) and auto-generate DocEntry.
+
+  /**
+   * Create a new UDO record
+   *
+   * UDOs are User Defined Tables registered in OUDO. Unlike plain UDTs,
+   * they use the UDO Code as the endpoint (no U_ prefix) and Service Layer
+   * auto-generates DocEntry, Object, UserSign, and timestamps.
+   *
+   * @param udoCode - UDO Code from OUDO.Code (e.g., 'ATELIERATTN')
+   * @param data - Record data (must include Code field)
+   *
+   * @example
+   * await serviceLayer.createUDO('ATELIERATTN', {
+   *   Code: 'uuid-here',
+   *   Name: 'uuid-here',
+   *   U_WorkOrder: '1234',
+   *   U_ProcType: 'BAS'
+   * });
+   */
+  async createUDO(udoCode: string, data: unknown): Promise<unknown> {
+    return this.request('POST', `/${udoCode}`, data);
+  }
+
+  /**
+   * Get a UDO record by code
+   *
+   * @param udoCode - UDO Code from OUDO.Code
+   * @param code - Record code (primary key)
+   */
+  async getUDO(udoCode: string, code: string): Promise<unknown> {
+    return this.request('GET', `/${udoCode}('${code}')`);
+  }
+
+  /**
+   * Update an existing UDO record
+   *
+   * @param udoCode - UDO Code from OUDO.Code
+   * @param code - Record code (primary key)
+   * @param data - Fields to update
+   */
+  async updateUDO(
+    udoCode: string,
+    code: string,
+    data: unknown
+  ): Promise<void> {
+    await this.request('PATCH', `/${udoCode}('${code}')`, data);
   }
 }

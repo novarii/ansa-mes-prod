@@ -47,8 +47,8 @@ This spec defines the feature boundary for the Ansa MES MVP. The MVP targets sho
 | Direction | Method | Targets |
 |-----------|--------|---------|
 | **READ** | HANA direct SQL | OWOR, WOR1, ORSC, OHEM, OCRD, @ATELIERATTN, @BREAKREASON |
-| **WRITE (SAP standard)** | DI API / Service Layer | OIGN (production receipts via IGN1) |
-| **WRITE (custom UDTs)** | Direct SQL | @ATELIERATTN, @BREAKREASON |
+| **WRITE (SAP standard)** | Service Layer | OIGN (production receipts via IGN1) |
+| **WRITE (custom UDTs)** | Service Layer | @ATELIERATTN (via `createUDT()` for DocEntry auto-generation) |
 
 ---
 

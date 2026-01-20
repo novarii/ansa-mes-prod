@@ -1,5 +1,18 @@
 {
   "title": "Uretim",
+  "employeeSelect": {
+    "title": "Calisan Sec",
+    "startTitle": "Baslat - Calisan Sec",
+    "stopTitle": "Durdur - Calisan Sec",
+    "description": "Isi baslatmak icin calisanlari secin",
+    "stopDescription": "Isi durdurmak icin calisanlari ve mola nedenini secin",
+    "selectAll": "Tumunu Sec",
+    "selected": "{{count}} calisan secildi",
+    "activeWorkers": "{{count}} calisan aktif",
+    "searchPlaceholder": "Calisan ara...",
+    "listLabel": "Calisan listesi",
+    "noActiveWorkers": "Bu is emrinde aktif calisan bulunmuyor"
+  },
   "entry": {
     "title": "Tamamlanan Miktar Girisi",
     "batchSerial": "Parti/Seri No",

@@ -28,7 +28,8 @@ import { DocumentsTab } from './DocumentsTab';
 import { PickListTab } from './PickListTab';
 import {
   ActivityButtons,
-  BreakReasonModal,
+  StartActivityModal,
+  StopActivityMultiModal,
   ProductionEntryModal,
 } from '../production';
 
@@ -42,7 +43,8 @@ export function WorkOrderDetailPage(): React.ReactElement {
   const { t } = useI18n();
 
   // Modal state
-  const [isBreakReasonModalOpen, setIsBreakReasonModalOpen] = useState(false);
+  const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+  const [isStopModalOpen, setIsStopModalOpen] = useState(false);
   const [isProductionEntryModalOpen, setIsProductionEntryModalOpen] = useState(false);
 
   // Fetch work order detail
@@ -57,17 +59,30 @@ export function WorkOrderDetailPage(): React.ReactElement {
   );
 
   // Handlers for modals
-  const handleBreakReasonRequired = useCallback(() => {
-    setIsBreakReasonModalOpen(true);
+  const handleStartEmployeesRequired = useCallback(() => {
+    setIsStartModalOpen(true);
   }, []);
 
-  const handleBreakReasonClose = useCallback(() => {
-    setIsBreakReasonModalOpen(false);
+  const handleStartModalClose = useCallback(() => {
+    setIsStartModalOpen(false);
   }, []);
 
-  const handleBreakReasonSuccess = useCallback(() => {
-    setIsBreakReasonModalOpen(false);
-    // Refresh activity state (handled by ActivityButtons invalidation)
+  const handleStartModalSuccess = useCallback(() => {
+    setIsStartModalOpen(false);
+    // Refresh activity state (handled by modal invalidation)
+  }, []);
+
+  const handleStopEmployeesRequired = useCallback(() => {
+    setIsStopModalOpen(true);
+  }, []);
+
+  const handleStopModalClose = useCallback(() => {
+    setIsStopModalOpen(false);
+  }, []);
+
+  const handleStopModalSuccess = useCallback(() => {
+    setIsStopModalOpen(false);
+    // Refresh activity state (handled by modal invalidation)
   }, []);
 
   const handleProductionEntryClick = useCallback(() => {
@@ -156,7 +171,8 @@ export function WorkOrderDetailPage(): React.ReactElement {
           <div className="flex flex-wrap items-center gap-4">
             <ActivityButtons
               docEntry={workOrder.docEntry}
-              onBreakReasonRequired={handleBreakReasonRequired}
+              onStartEmployeesRequired={handleStartEmployeesRequired}
+              onStopEmployeesRequired={handleStopEmployeesRequired}
             />
             <div className="flex-1" />
             <Button
@@ -191,12 +207,20 @@ export function WorkOrderDetailPage(): React.ReactElement {
         </TabsContent>
       </Tabs>
 
-      {/* Break Reason Modal */}
-      <BreakReasonModal
-        isOpen={isBreakReasonModalOpen}
+      {/* Start Activity Modal (Employee Selection) */}
+      <StartActivityModal
+        isOpen={isStartModalOpen}
         docEntry={workOrder.docEntry}
-        onClose={handleBreakReasonClose}
-        onSuccess={handleBreakReasonSuccess}
+        onClose={handleStartModalClose}
+        onSuccess={handleStartModalSuccess}
+      />
+
+      {/* Stop Activity Modal (Employee + Break Reason Selection) */}
+      <StopActivityMultiModal
+        isOpen={isStopModalOpen}
+        docEntry={workOrder.docEntry}
+        onClose={handleStopModalClose}
+        onSuccess={handleStopModalSuccess}
       />
 
       {/* Production Entry Modal */}
