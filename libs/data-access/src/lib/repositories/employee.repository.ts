@@ -20,6 +20,7 @@ export class EmployeeRepository {
    *
    * @param empId - Employee ID
    * @returns Employee with password or null if not found
+   * @deprecated Use findByLoginCode instead - MES uses U_password as login ID
    */
   async findByIdWithPassword(empId: number): Promise<EmployeeWithAuth | null> {
     const sql = `
@@ -34,6 +35,31 @@ export class EmployeeRepository {
     `;
 
     return this.hanaService.queryOne<EmployeeWithAuth>(sql, [empId]);
+  }
+
+  /**
+   * Find employee by login code (U_password field)
+   *
+   * In the MES system, U_password serves as BOTH the login ID and password.
+   * Example: Login "200" → finds employee where U_password = '200'
+   *
+   * @param loginCode - The login code (stored in U_password)
+   * @returns Employee with auth info or null if not found
+   */
+  async findByLoginCode(loginCode: string): Promise<EmployeeWithAuth | null> {
+    const sql = `
+      SELECT
+        "empID",
+        "firstName",
+        "lastName",
+        "U_mainStation",
+        "U_password"
+      FROM "OHEM"
+      WHERE "U_password" = ?
+        AND "Active" = 'Y'
+    `;
+
+    return this.hanaService.queryOne<EmployeeWithAuth>(sql, [loginCode]);
   }
 
   /**

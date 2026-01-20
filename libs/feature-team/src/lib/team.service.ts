@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ResourceRepository, ActivityRepository } from '@org/data-access';
 import type {
   ShiftCode,
@@ -22,16 +22,6 @@ interface TodayActivity {
 }
 
 /**
- * Worker info from resource repository
- */
-interface WorkerInfo {
-  empID: number;
-  firstName: string;
-  lastName: string;
-  IsDefault: boolean;
-}
-
-/**
  * Team Service handles team view operations.
  *
  * Provides:
@@ -43,6 +33,8 @@ interface WorkerInfo {
  */
 @Injectable()
 export class TeamService {
+  private readonly logger = new Logger(TeamService.name);
+
   /**
    * Shift definitions per specs/feature-team-calendar.md
    */
@@ -95,10 +87,13 @@ export class TeamService {
   /**
    * Get all machines with their worker status
    *
-   * For each machine, workers are classified as:
-   * - Assigned: Latest activity is BAS or DEV (currently working)
-   * - Paused: Latest activity is DUR (on break)
-   * - Available: No activity today or latest is BIT (finished)
+   * Uses OHEM.U_mainStation to determine WHO IS ASSIGNED to each machine.
+   * Workers with NULL U_mainStation are "Bosta" (idle/unassigned).
+   *
+   * Activity status from @ATELIERATTN determines working state:
+   * - Assigned + BAS/DEV: Currently working (green)
+   * - Assigned + DUR: Paused/on break (yellow)
+   * - Assigned + no activity or BIT: Assigned but not started (gray)
    *
    * @param filters - Optional filters (shift)
    * @returns Team view response with machines and worker status
@@ -106,70 +101,121 @@ export class TeamService {
   async getMachinesWithWorkerStatus(
     filters?: TeamViewFilters
   ): Promise<TeamViewResponse> {
+    const startTime = Date.now();
+    this.logger.debug('getMachinesWithWorkerStatus: starting');
+
     const currentShift = this.getCurrentShift();
     const shiftFilter = filters?.shift ?? 'all';
 
-    // Get all machines
+    // BATCH QUERY 1: Get all machines
+    this.logger.debug('getMachinesWithWorkerStatus: fetching all machines');
     const machines = await this.resourceRepository.findAllMachines();
+    this.logger.debug(
+      `getMachinesWithWorkerStatus: found ${machines.length} machines in ${Date.now() - startTime}ms`
+    );
 
-    if (machines.length === 0) {
-      return {
-        currentShift,
-        shiftFilter,
-        machines: [],
-      };
+    // BATCH QUERY 2: Get ALL workers with their current assignment (OHEM.U_mainStation)
+    this.logger.debug('getMachinesWithWorkerStatus: fetching all assigned workers');
+    const allWorkers = await this.resourceRepository.findAllAssignedWorkers();
+    this.logger.debug(
+      `getMachinesWithWorkerStatus: found ${allWorkers.length} employees in ${Date.now() - startTime}ms`
+    );
+
+    // BATCH QUERY 3: Get ALL today's activities for working status
+    this.logger.debug('getMachinesWithWorkerStatus: fetching all activities');
+    const allActivities = await this.activityRepository.findAllTodayActivities();
+    this.logger.debug(
+      `getMachinesWithWorkerStatus: found ${allActivities.length} activities in ${Date.now() - startTime}ms`
+    );
+
+    // Create machine code -> machine name lookup
+    const machineNameMap = new Map<string, string>();
+    for (const machine of machines) {
+      machineNameMap.set(machine.ResCode, machine.ResName);
     }
 
-    // Get workers for each machine
+    // Group workers by their mainStation (U_mainStation from OHEM)
+    // Key is the full U_mainStation value like "1126 - SAURER 1"
+    const workersByStation = new Map<string, typeof allWorkers>();
+    const idleWorkers: typeof allWorkers = []; // Workers with NULL mainStation ("Bosta")
+
+    for (const worker of allWorkers) {
+      if (worker.mainStation) {
+        if (!workersByStation.has(worker.mainStation)) {
+          workersByStation.set(worker.mainStation, []);
+        }
+        workersByStation.get(worker.mainStation)!.push(worker);
+      } else {
+        idleWorkers.push(worker);
+      }
+    }
+
+    // Build activity map: empId -> latest activity (for working status)
+    const activityByEmployee = new Map<number, TodayActivity>();
+    for (const activity of allActivities) {
+      const empId = parseInt(activity.U_EmpId, 10);
+      // Activities are sorted by U_Start DESC, so first one is latest
+      if (!activityByEmployee.has(empId)) {
+        activityByEmployee.set(empId, activity);
+      }
+    }
+
+    // Build machine cards
     const machineCards: TeamMachineCard[] = [];
 
     for (const machine of machines) {
-      const workers = await this.resourceRepository.findWorkersForMachine(
-        machine.ResCode
-      );
+      // Workers assigned to this machine via U_mainStation
+      const assignedToMachine = workersByStation.get(machine.ResCode) ?? [];
 
-      if (workers.length === 0) {
-        machineCards.push({
-          machineCode: machine.ResCode,
-          machineName: machine.ResName,
-          assignedWorkers: [],
-          pausedWorkers: [],
-          availableWorkers: [],
-        });
-        continue;
-      }
-
-      // Get today's activities for these workers
-      const workerIds = workers.map((w) => w.empID);
-      const activities =
-        await this.activityRepository.findTodayActivitiesForWorkers(
-          workerIds,
-          machine.ResCode
-        );
-
-      // Build worker status map (latest activity per worker)
-      const workerActivityMap = this.buildWorkerActivityMap(activities);
-
-      // Classify workers
       const assignedWorkers: TeamWorker[] = [];
       const pausedWorkers: TeamWorker[] = [];
       const availableWorkers: TeamWorker[] = [];
 
-      for (const worker of workers) {
-        const activity = workerActivityMap.get(worker.empID);
-        const teamWorker = this.buildTeamWorker(worker, activity);
+      for (const worker of assignedToMachine) {
+        const activity = activityByEmployee.get(worker.empID);
+        const fullName = `${worker.firstName} ${worker.lastName}`;
 
-        switch (teamWorker.status) {
+        // Determine working status from activity
+        let status: 'assigned' | 'paused' | 'available' = 'available';
+        if (activity) {
+          switch (activity.U_ProcType) {
+            case 'BAS':
+            case 'DEV':
+              status = 'assigned'; // Currently working
+              break;
+            case 'DUR':
+              status = 'paused'; // On break
+              break;
+            default:
+              status = 'available'; // BIT or unknown = finished/idle
+          }
+        }
+
+        const teamWorker: TeamWorker = {
+          empId: worker.empID,
+          fullName,
+          status,
+          jobTitle: worker.jobTitle ?? undefined,
+        };
+
+        // Add work order info if actively working or paused
+        if (activity && (status === 'assigned' || status === 'paused')) {
+          teamWorker.currentWorkOrder = {
+            docEntry: parseInt(activity.U_WorkOrder, 10),
+            docNum: parseInt(activity.U_WorkOrder, 10),
+            itemCode: '',
+          };
+        }
+
+        switch (status) {
           case 'assigned':
             assignedWorkers.push(teamWorker);
             break;
           case 'paused':
             pausedWorkers.push(teamWorker);
             break;
-          case 'available':
           default:
             availableWorkers.push(teamWorker);
-            break;
         }
       }
 
@@ -182,9 +228,33 @@ export class TeamService {
       });
     }
 
-    // Sort machines alphabetically by name (Turkish locale)
-    machineCards.sort((a, b) =>
-      a.machineName.localeCompare(b.machineName, 'tr-TR')
+    // Add "Bosta" (idle) card for unassigned workers
+    if (idleWorkers.length > 0) {
+      const bostaWorkers: TeamWorker[] = idleWorkers.map((worker) => ({
+        empId: worker.empID,
+        fullName: `${worker.firstName} ${worker.lastName}`,
+        status: 'available' as const,
+        jobTitle: worker.jobTitle ?? undefined,
+      }));
+
+      machineCards.push({
+        machineCode: 'BOSTA',
+        machineName: 'Boşta',
+        assignedWorkers: [],
+        pausedWorkers: [],
+        availableWorkers: bostaWorkers,
+      });
+    }
+
+    // Sort machines alphabetically by name (Turkish locale), but keep "Boşta" at the end
+    machineCards.sort((a, b) => {
+      if (a.machineCode === 'BOSTA') return 1;
+      if (b.machineCode === 'BOSTA') return -1;
+      return a.machineName.localeCompare(b.machineName, 'tr-TR');
+    });
+
+    this.logger.debug(
+      `getMachinesWithWorkerStatus: completed in ${Date.now() - startTime}ms (3 queries total)`
     );
 
     return {
@@ -194,80 +264,4 @@ export class TeamService {
     };
   }
 
-  /**
-   * Build a map of worker ID to their latest activity
-   */
-  private buildWorkerActivityMap(
-    activities: TodayActivity[]
-  ): Map<number, TodayActivity> {
-    const map = new Map<number, TodayActivity>();
-
-    // Activities should already be sorted by start time descending
-    // We take the first (latest) activity for each worker
-    for (const activity of activities) {
-      const empId = parseInt(activity.U_EmpId, 10);
-      if (!map.has(empId)) {
-        map.set(empId, activity);
-      }
-    }
-
-    return map;
-  }
-
-  /**
-   * Build a TeamWorker object from worker info and activity
-   */
-  private buildTeamWorker(
-    worker: WorkerInfo,
-    activity?: TodayActivity
-  ): TeamWorker {
-    const fullName = `${worker.firstName} ${worker.lastName}`;
-
-    // No activity today - available
-    if (!activity) {
-      return {
-        empId: worker.empID,
-        fullName,
-        status: 'available',
-      };
-    }
-
-    // Determine status based on process type
-    const status = this.getWorkerStatus(activity.U_ProcType);
-
-    const teamWorker: TeamWorker = {
-      empId: worker.empID,
-      fullName,
-      status,
-    };
-
-    // Add work order info if assigned or paused
-    if (status === 'assigned' || status === 'paused') {
-      teamWorker.currentWorkOrder = {
-        docEntry: parseInt(activity.U_WorkOrder, 10),
-        docNum: parseInt(activity.U_WorkOrder, 10), // Will be replaced with actual docNum
-        itemCode: '', // Will be replaced with actual itemCode
-      };
-    }
-
-    return teamWorker;
-  }
-
-  /**
-   * Get worker status from activity process type
-   */
-  private getWorkerStatus(
-    processType: string
-  ): 'assigned' | 'paused' | 'available' {
-    switch (processType) {
-      case 'BAS':
-      case 'DEV':
-        return 'assigned';
-      case 'DUR':
-        return 'paused';
-      case 'BIT':
-      default:
-        return 'available';
-    }
-  }
 }

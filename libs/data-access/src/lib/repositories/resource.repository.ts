@@ -152,6 +152,77 @@ export class ResourceRepository {
   }
 
   /**
+   * Find all workers for ALL machines in a single query (batch operation)
+   *
+   * DEPRECATED: This uses ORSC.U_secondEmp which shows WHO CAN work on a machine.
+   * For team view, use findAllAssignedWorkers() which uses OHEM.U_mainStation
+   * to show WHO IS CURRENTLY assigned to a machine.
+   *
+   * @returns Array of workers with their machine capability
+   */
+  async findAllWorkersForAllMachines(): Promise<
+    Array<WorkerForMachine & { ResCode: string }>
+  > {
+    const sql = `
+      SELECT
+        r."ResCode",
+        e."empID",
+        e."firstName",
+        e."lastName",
+        CASE
+          WHEN r."U_defaultEmp" = CAST(e."empID" AS VARCHAR) THEN TRUE
+          ELSE FALSE
+        END AS "IsDefault"
+      FROM "OHEM" e
+      INNER JOIN "ORSC" r ON r."ResType" = 'M'
+      WHERE ',' || r."U_secondEmp" || ',' LIKE '%,' || CAST(e."empID" AS VARCHAR) || ',%'
+         OR r."U_defaultEmp" = CAST(e."empID" AS VARCHAR)
+      ORDER BY r."ResCode", "IsDefault" DESC, e."lastName", e."firstName"
+    `;
+
+    return this.hanaService.query<WorkerForMachine & { ResCode: string }>(sql);
+  }
+
+  /**
+   * Find all workers with their CURRENT machine assignment from OHEM.U_mainStation
+   *
+   * This is the correct source for team view:
+   * - U_mainStation = machine they're currently assigned to
+   * - NULL U_mainStation = "Bosta" (idle/unassigned)
+   *
+   * @returns Array of all active employees with their assignment
+   */
+  async findAllAssignedWorkers(): Promise<
+    Array<{
+      empID: number;
+      firstName: string;
+      lastName: string;
+      jobTitle: string | null;
+      mainStation: string | null;
+    }>
+  > {
+    const sql = `
+      SELECT
+        "empID",
+        "firstName",
+        "lastName",
+        "jobTitle",
+        "U_mainStation" AS "mainStation"
+      FROM "OHEM"
+      WHERE "Active" = 'Y'
+      ORDER BY "lastName", "firstName"
+    `;
+
+    return this.hanaService.query<{
+      empID: number;
+      firstName: string;
+      lastName: string;
+      jobTitle: string | null;
+      mainStation: string | null;
+    }>(sql);
+  }
+
+  /**
    * Find a single machine by code
    *
    * @param resCode - Machine resource code

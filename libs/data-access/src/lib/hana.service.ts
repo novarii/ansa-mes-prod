@@ -59,6 +59,11 @@ export class HanaService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly configService: ConfigService) {}
 
   /**
+   * Schema to use for queries (set via HANA_SCHEMA env var)
+   */
+  private schema: string | undefined;
+
+  /**
    * Initialize connection pool on module startup
    */
   async onModuleInit(): Promise<void> {
@@ -67,6 +72,7 @@ export class HanaService implements OnModuleInit, OnModuleDestroy {
     const user = this.configService.get<string>('HANA_USER');
     const password = this.configService.get<string>('HANA_PASSWORD');
     const databaseName = this.configService.get<string>('HANA_DATABASE');
+    this.schema = this.configService.get<string>('HANA_SCHEMA');
 
     this.pool = hanaClient.createPool({
       host,
@@ -77,7 +83,9 @@ export class HanaService implements OnModuleInit, OnModuleDestroy {
       poolSize: 10,
     });
 
-    this.logger.log('HANA connection pool initialized');
+    this.logger.log(
+      `HANA connection pool initialized${this.schema ? ` (schema: ${this.schema})` : ''}`
+    );
   }
 
   /**
@@ -182,16 +190,28 @@ export class HanaService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** Default timeout for getting a connection from pool (ms) */
+  private readonly POOL_TIMEOUT_MS = 10000;
+  /** Default timeout for query execution (ms) */
+  private readonly QUERY_TIMEOUT_MS = 30000;
+
   /**
    * Internal helper to get a connection from the pool with promise interface
+   * Sets the schema if HANA_SCHEMA is configured
    */
-  private getConnectionFromPool(): Promise<hanaClient.Connection> {
-    return new Promise((resolve, reject) => {
+  private async getConnectionFromPool(): Promise<hanaClient.Connection> {
+    const connection = await new Promise<hanaClient.Connection>((resolve, reject) => {
       if (!this.pool) {
         reject(new Error('Pool not initialized'));
         return;
       }
+
+      const timeout = setTimeout(() => {
+        reject(new Error(`Pool connection timeout after ${this.POOL_TIMEOUT_MS}ms`));
+      }, this.POOL_TIMEOUT_MS);
+
       this.pool.getConnection((err: Error, conn?: hanaClient.Connection) => {
+        clearTimeout(timeout);
         if (err) {
           reject(err);
         } else if (!conn) {
@@ -201,6 +221,28 @@ export class HanaService implements OnModuleInit, OnModuleDestroy {
         }
       });
     });
+
+    // Set schema if configured
+    if (this.schema) {
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          connection.disconnect();
+          reject(new Error(`SET SCHEMA timeout after ${this.QUERY_TIMEOUT_MS}ms`));
+        }, this.QUERY_TIMEOUT_MS);
+
+        connection.exec(`SET SCHEMA "${this.schema}"`, [], (err: Error) => {
+          clearTimeout(timeout);
+          if (err) {
+            connection.disconnect();
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    }
+
+    return connection;
   }
 
   /**
@@ -212,7 +254,13 @@ export class HanaService implements OnModuleInit, OnModuleDestroy {
     params: hanaClient.HanaParameterType[]
   ): Promise<T> {
     return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.logger.error(`Query timeout after ${this.QUERY_TIMEOUT_MS}ms: ${sql.substring(0, 100)}...`);
+        reject(new Error(`Query timeout after ${this.QUERY_TIMEOUT_MS}ms`));
+      }, this.QUERY_TIMEOUT_MS);
+
       connection.exec<T>(sql, params, (err: Error, result?: T) => {
+        clearTimeout(timeout);
         if (err) {
           this.logger.error(`Query failed: ${err.message}`, err.stack);
           reject(err);

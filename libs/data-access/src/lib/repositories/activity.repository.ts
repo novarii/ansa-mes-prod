@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { HanaService } from '../hana.service';
+import { ServiceLayerService } from '../service-layer.service';
 import {
   Activity,
   ActivityWithDetails,
@@ -41,49 +42,57 @@ export interface TodayActivityResult {
  */
 @Injectable()
 export class ActivityRepository {
-  constructor(private readonly hanaService: HanaService) {}
+  constructor(
+    private readonly hanaService: HanaService,
+    private readonly serviceLayerService: ServiceLayerService
+  ) {}
 
   /**
-   * Create a new activity record
+   * Create a new activity record via Service Layer
    *
-   * IMPORTANT: This inserts directly to @ATELIERATTN (UDT).
+   * Uses Service Layer POST /ATELIERATTN (UDO endpoint) to auto-generate
+   * DocEntry and other SAP-managed system fields.
    *
    * @param data - Activity data without Code/Name (auto-generated)
    * @returns Created activity with generated Code
    */
   async create(data: CreateActivity): Promise<Activity> {
     const code = randomUUID();
-    const activity: Activity = {
+
+    // Format date for Service Layer (date only, time stored separately)
+    const startDate =
+      data.U_Start instanceof Date ? data.U_Start : new Date(data.U_Start);
+
+    // U_Start = date only (ISO date string)
+    const startDateStr = startDate.toISOString().split('T')[0];
+
+    // U_StartTime = HHMM as integer (e.g., 1754 for 17:54)
+    const hours = startDate.getHours();
+    const minutes = startDate.getMinutes();
+    const startTime = hours * 100 + minutes;
+
+    const payload = {
       Code: code,
       Name: code, // SAP UDT requirement: Name = Code
-      ...data,
+      U_WorkOrder: data.U_WorkOrder,
+      U_ResCode: data.U_ResCode,
+      U_EmpId: data.U_EmpId,
+      U_ProcType: data.U_ProcType,
+      U_Start: startDateStr,
+      U_StartTime: startTime,
+      U_BreakCode: data.U_BreakCode,
+      U_Aciklama: data.U_Aciklama,
     };
 
-    const sql = `
-      INSERT INTO "@ATELIERATTN" (
-        "Code",
-        "Name",
-        "U_WorkOrder",
-        "U_ResCode",
-        "U_EmpId",
-        "U_ProcType",
-        "U_Start",
-        "U_BreakCode",
-        "U_Aciklama"
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
+    // Use createUDO (not createUDT) - ATELIERATTN is a registered UDO
+    await this.serviceLayerService.createUDO('ATELIERATTN', payload);
 
-    await this.hanaService.execute(sql, [
-      activity.Code,
-      activity.Name,
-      activity.U_WorkOrder,
-      activity.U_ResCode,
-      activity.U_EmpId,
-      activity.U_ProcType,
-      activity.U_Start,
-      activity.U_BreakCode,
-      activity.U_Aciklama,
-    ]);
+    // Return the activity object (Service Layer auto-generated DocEntry)
+    const activity: Activity = {
+      Code: code,
+      Name: code,
+      ...data,
+    };
 
     return activity;
   }
@@ -246,6 +255,30 @@ export class ActivityRepository {
       resCode,
       ...empIdStrings,
     ]);
+  }
+
+  /**
+   * Find ALL today's activities across ALL machines in a single query (batch operation)
+   *
+   * Used for efficient team view loading - fetches all activities at once
+   * instead of per-machine queries.
+   *
+   * @returns Array of today's activities for all workers
+   */
+  async findAllTodayActivities(): Promise<TodayActivityResult[]> {
+    const sql = `
+      SELECT
+        "U_EmpId",
+        "U_ResCode",
+        "U_ProcType",
+        "U_WorkOrder",
+        "U_Start"
+      FROM "@ATELIERATTN"
+      WHERE "U_Start" >= CURRENT_DATE
+      ORDER BY "U_Start" DESC
+    `;
+
+    return this.hanaService.query<TodayActivityResult>(sql);
   }
 
   /**

@@ -68,6 +68,8 @@ export interface TeamWorker {
   fullName: string;
   /** Current status */
   status: 'assigned' | 'paused' | 'available';
+  /** Job title/role (from OHEM.jobTitle) */
+  jobTitle?: string;
   /** Current work order (if assigned/paused) */
   currentWorkOrder?: {
     docEntry: number;

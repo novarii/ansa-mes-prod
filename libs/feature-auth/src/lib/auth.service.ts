@@ -15,8 +15,11 @@ import type {
  * AuthService handles authentication and station selection.
  *
  * Implements the two-step login flow:
- * 1. Validate credentials (empId + PIN)
+ * 1. Validate credentials (loginCode which is stored in U_password)
  * 2. Select authorized station
+ *
+ * NOTE: In this MES system, U_password serves as BOTH the login ID and password.
+ * User enters the same value for both (e.g., "200" / "200").
  *
  * @see specs/user-permission-model.md
  */
@@ -28,44 +31,53 @@ export class AuthService {
   ) {}
 
   /**
-   * Authenticate employee with ID and PIN
+   * Authenticate employee with login code and PIN
    *
-   * @param empId - Employee ID
-   * @param pin - PIN or password
+   * In the MES system, U_password is used as BOTH the login ID and password.
+   * Example: User with U_password = '200' logs in with empId=200, pin='200'
+   *
+   * For backward compatibility, we accept empId but treat it as the login code.
+   *
+   * @param empId - Login code (stored in U_password, NOT the actual empID)
+   * @param pin - PIN (same as login code in MES)
    * @returns Login response with employee info and station count
    * @throws UnauthorizedException when credentials are invalid
    * @throws BadRequestException when input validation fails
    */
   async login(empId: number, pin: string): Promise<LoginResponse> {
+    // Convert empId to string as login code
+    const loginCode = String(empId);
+
     // Input validation
-    if (!empId || empId <= 0) {
+    if (!loginCode || loginCode.trim() === '') {
       throw new BadRequestException('Gecersiz calisan numarasi');
     }
     if (!pin || pin.trim() === '') {
       throw new BadRequestException('Sifre gereklidir');
     }
 
-    // Validate credentials
-    const isValid = await this.employeeRepository.validatePassword(empId, pin);
-    if (!isValid) {
+    // Find employee by login code (U_password field)
+    const employee = await this.employeeRepository.findByLoginCode(loginCode);
+    if (!employee) {
       throw new UnauthorizedException('Gecersiz kimlik bilgileri');
     }
 
-    // Get employee details
-    const employee = await this.employeeRepository.findByIdWithPassword(empId);
-    if (!employee) {
-      throw new UnauthorizedException('Calisan bulunamadi');
+    // Validate PIN (in MES, login code = password)
+    if (employee.U_password !== pin) {
+      throw new UnauthorizedException('Gecersiz kimlik bilgileri');
     }
 
-    // Get authorized station count
+    // Get authorized station count using actual empID
     const machines =
-      await this.resourceRepository.findAuthorizedMachinesForWorker(empId);
+      await this.resourceRepository.findAuthorizedMachinesForWorker(
+        employee.empID
+      );
 
     const empName = `${employee.firstName} ${employee.lastName}`;
 
     return {
       success: true,
-      empId: employee.empID,
+      empId: employee.empID, // Return actual empID for subsequent calls
       empName,
       stationCount: machines.length,
     };
