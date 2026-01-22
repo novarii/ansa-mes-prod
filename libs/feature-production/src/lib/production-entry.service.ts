@@ -199,7 +199,6 @@ export class ProductionEntryService {
 
       const acceptedResult = await this.createGoodsReceipt(
         workOrder.DocEntry,
-        workOrder.ItemCode,
         acceptedQty,
         workOrder.Warehouse ?? '03',
         batchNumber
@@ -211,7 +210,6 @@ export class ProductionEntryService {
     if (rejectedQty > 0) {
       const rejectedResult = await this.createGoodsReceipt(
         workOrder.DocEntry,
-        workOrder.ItemCode,
         rejectedQty,
         this.REJECT_WAREHOUSE,
         null
@@ -246,18 +244,21 @@ export class ProductionEntryService {
 
   /**
    * Create a goods receipt via Service Layer
+   *
+   * Note: ItemCode is NOT passed - SAP B1 infers it from the production order
+   * when BaseEntry/BaseType are provided.
    */
   private async createGoodsReceipt(
     baseDocEntry: number,
-    itemCode: string,
     quantity: number,
     warehouseCode: string,
     batchNumber: string | null
   ): Promise<{ DocEntry?: number }> {
     const today = new Date().toISOString().split('T')[0];
 
+    // Note: Do NOT include ItemCode when referencing a production order (BaseEntry/BaseType)
+    // SAP B1 infers ItemCode from the production order automatically
     const documentLine: Record<string, unknown> = {
-      ItemCode: itemCode,
       Quantity: quantity,
       WarehouseCode: warehouseCode,
       BaseEntry: baseDocEntry,
