@@ -281,7 +281,63 @@ export class ProductionEntryService {
       DocumentLines: [documentLine],
     };
 
-    return this.serviceLayerService.createGoodsReceipt(goodsReceiptData);
+    try {
+      return await this.serviceLayerService.createGoodsReceipt(goodsReceiptData);
+    } catch (error) {
+      throw this.handleServiceLayerError(error);
+    }
+  }
+
+  /**
+   * Handle Service Layer errors and convert to user-friendly messages
+   */
+  private handleServiceLayerError(error: unknown): BadRequestException {
+    const message = error instanceof Error ? error.message : String(error);
+
+    // Try to parse SAP error JSON
+    try {
+      const parsed = JSON.parse(message);
+      const sapMessage = parsed?.error?.message || message;
+      const sapCode = parsed?.error?.code || '';
+
+      // Map known SAP errors to Turkish user-friendly messages
+      const userMessage = this.mapSapErrorToTurkish(sapCode, sapMessage);
+      return new BadRequestException(userMessage);
+    } catch {
+      // If not JSON, check for known error patterns
+      const userMessage = this.mapSapErrorToTurkish('', message);
+      return new BadRequestException(userMessage);
+    }
+  }
+
+  /**
+   * Map SAP error codes/messages to Turkish user-friendly messages
+   */
+  private mapSapErrorToTurkish(code: string, message: string): string {
+    // Check for known error patterns
+    if (message.includes('Item Issued Qty in work order should be larger than zero')) {
+      return 'Bu iş emri için henüz hammadde çıkışı yapılmamış. Üretim girişi yapabilmek için önce malzeme çıkışı gereklidir.';
+    }
+
+    if (message.includes('Update the exchange rate')) {
+      const currency = message.match(/'(\w+)'/)?.[1] || 'döviz';
+      return `${currency} için güncel döviz kuru tanımlı değil. Lütfen sistem yöneticinize başvurun.`;
+    }
+
+    if (message.includes('field should be empty if the document is referenced')) {
+      return 'SAP belge referans hatası. Lütfen sistem yöneticinize başvurun.';
+    }
+
+    if (code === '-10') {
+      return 'Döviz kuru hatası. Lütfen sistem yöneticinize başvurun.';
+    }
+
+    if (code === '-5002') {
+      return `SAP doğrulama hatası: ${message}`;
+    }
+
+    // Default: return original message with prefix
+    return `SAP hatası: ${message}`;
   }
 
   /**
