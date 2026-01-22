@@ -216,6 +216,11 @@ All production entries require batch numbers for traceability.
 
 **Example:** `ANS20261218042` = 42nd batch on December 18, 2026
 
+**Batch Sharing:** When a production entry includes both accepted and rejected quantities,
+the **same batch number** is used for both goods receipts (to standard warehouse and FRD warehouse).
+This ensures traceability - rejected items can be traced back to the same production run as accepted items.
+If separate batch tracking is needed for rejects in the future, generate a second batch with `REJ` prefix.
+
 **Generation Logic:**
 
 ```sql

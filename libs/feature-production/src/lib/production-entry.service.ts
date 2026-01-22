@@ -192,11 +192,16 @@ export class ProductionEntryService {
     let rejectedDocEntry: number | null = null;
     let batchNumber: string | null = null;
 
-    // Create goods receipt for accepted quantity
-    if (acceptedQty > 0) {
+    // Generate batch number if any quantity will be reported
+    // Note: Same batch number is used for both accepted and rejected quantities
+    // for traceability. See specs/feature-production.md for details.
+    if (acceptedQty > 0 || rejectedQty > 0) {
       const batchResult = await this.generateBatchNumber();
       batchNumber = batchResult.batchNumber;
+    }
 
+    // Create goods receipt for accepted quantity
+    if (acceptedQty > 0) {
       const acceptedResult = await this.createGoodsReceipt(
         workOrder.DocEntry,
         acceptedQty,
@@ -206,13 +211,13 @@ export class ProductionEntryService {
       acceptedDocEntry = acceptedResult.DocEntry ?? null;
     }
 
-    // Create goods receipt for rejected quantity
+    // Create goods receipt for rejected quantity (uses same batch number)
     if (rejectedQty > 0) {
       const rejectedResult = await this.createGoodsReceipt(
         workOrder.DocEntry,
         rejectedQty,
         this.REJECT_WAREHOUSE,
-        null
+        batchNumber
       );
       rejectedDocEntry = rejectedResult.DocEntry ?? null;
     }
