@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { api, ApiRequestError } from './api';
+import { getAuthToken } from '../context/AuthContext';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -15,9 +16,6 @@ global.fetch = mockFetch;
 vi.mock('../context/AuthContext', () => ({
   getAuthToken: vi.fn(() => null),
 }));
-
-// Import the mocked function for test control
-import { getAuthToken } from '../context/AuthContext';
 
 describe('api', () => {
   beforeEach(() => {
