@@ -1,26 +1,40 @@
-import { render } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+/**
+ * App Component Tests
+ *
+ * Tests for the root application component.
+ */
 
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import App from './app';
 
 describe('App', () => {
   it('should render successfully', () => {
     const { baseElement } = render(
-      <BrowserRouter>
+      <MemoryRouter>
         <App />
-      </BrowserRouter>
+      </MemoryRouter>
     );
     expect(baseElement).toBeTruthy();
   });
 
-  it('should have a greeting as the title', () => {
-    const { getAllByText } = render(
-      <BrowserRouter>
+  it('should show login page for unauthenticated user', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
         <App />
-      </BrowserRouter>
+      </MemoryRouter>
     );
-    expect(
-      getAllByText(new RegExp('Welcome @org/web', 'gi')).length > 0
-    ).toBeTruthy();
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
+  });
+
+  it('should redirect to login when accessing protected route', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    // Should redirect to login since user is not authenticated
+    expect(screen.getByTestId('login-page')).toBeInTheDocument();
   });
 });

@@ -53,7 +53,7 @@ MES does **NOT** create B1 Production Orders. The flow is:
 
 ### Activity Tracking
 
-Worker actions are recorded in `@ATELIERATTN` via direct SQL INSERT:
+Worker actions are recorded in `@ATELIERATTN` via Service Layer `createUDO()` (it's a registered UDO):
 
 | Action | U_ProcType | Description |
 |--------|------------|-------------|
@@ -62,11 +62,19 @@ Worker actions are recorded in `@ATELIERATTN` via direct SQL INSERT:
 | Resume | DEV | Worker continues |
 | Finish | BIT | Worker completes job |
 
-```sql
-INSERT INTO "@ATELIERATTN" (
-  "Code", "U_WorkOrder", "U_ResCode", "U_EmpId",
-  "U_ProcType", "U_Start", "U_BreakCode"
-) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+```typescript
+// Use Service Layer UDO endpoint to auto-generate DocEntry and system fields
+// ATELIERATTN is registered in OUDO, so use createUDO (endpoint: /ATELIERATTN)
+await serviceLayer.createUDO('ATELIERATTN', {
+  Code: uuid(),  // Required PK
+  Name: uuid(),  // SAP UDT requirement
+  U_WorkOrder: String(docEntry),
+  U_ResCode: resCode,
+  U_EmpId: String(empId),
+  U_ProcType: 'BAS',
+  U_Start: new Date().toISOString(),
+  U_BreakCode: breakCode,
+});
 ```
 
 ### Production Entry (Report Quantities)

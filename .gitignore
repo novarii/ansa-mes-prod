@@ -2,6 +2,7 @@
 
 # compiled output
 dist
+dist-deployment
 tmp
 out-tsc
 
@@ -52,3 +53,10 @@ vitest.config.*.timestamp*
 .env.*.local
 
 .claude/
+
+.pnpm-store/
+
+# AI tool configs (keep or remove based on preference)
+.gemini/
+.mcp.json
+images/

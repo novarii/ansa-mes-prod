@@ -1,0 +1,31 @@
+{
+  "name": "@org/feature-work-orders",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "nx": {
+    "name": "feature-work-orders",
+    "tags": [
+      "scope:feature",
+      "type:work-orders"
+    ]
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@nestjs/common": "^11.0.0",
+    "@org/data-access": "workspace:*",
+    "@org/shared-types": "workspace:*",
+    "@org/feature-auth": "workspace:*"
+  }
+}

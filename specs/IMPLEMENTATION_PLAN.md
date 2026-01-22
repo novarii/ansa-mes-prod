@@ -28,9 +28,12 @@ E2E tests are added in Phase 17 after core features are complete.
 
 ---
 
-## Phase 1: Foundation Setup
+## Phase 1: Foundation Setup ✅ COMPLETED
 
 **Effort:** Small (~2-4 hours)
+**Status:** Completed on 2026-01-18
+**Libraries Created:** types, utils, data-access, feature-work-orders, feature-production, feature-team, feature-calendar, feature-auth
+**Tests:** All passing (69 tests across workspace)
 
 ### 1.1 Create Library Structure
 
@@ -72,9 +75,11 @@ pnpm add -D @types/uuid
 
 ---
 
-## Phase 2: Shared Types Library
+## Phase 2: Shared Types Library ✅ COMPLETED
 
 **Effort:** Small (~2-4 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 75 passing (entities, DTOs, API error types)
 
 > Reference: `specs/entity-repository-patterns.md`
 
@@ -121,9 +126,11 @@ Create `ApiError` interface per `specs/operational-standards.md`:
 
 ---
 
-## Phase 3: i18n Library
+## Phase 3: i18n Library ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 62 passing (43 Turkish locale tests + 19 i18n provider tests)
 
 > Reference: `specs/i18n-turkish-locale.md`
 
@@ -162,9 +169,11 @@ Implement the provider pattern from `specs/i18n-turkish-locale.md`:
 
 ---
 
-## Phase 4: Data Services
+## Phase 4: Data Services ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 41 passing (22 ServiceLayerService + 19 HanaService tests)
 
 > Reference: `specs/data-access-layer.md`
 
@@ -200,9 +209,11 @@ Create NestJS module exporting both services for injection.
 
 ---
 
-## Phase 5: Repositories
+## Phase 5: Repositories ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 111 passing (70 repository tests + 41 existing data-access tests)
 
 > Reference: `specs/data-access-layer.md`, `specs/feature-production.md`
 
@@ -218,7 +229,7 @@ Location: `libs/data-access/src/lib/repositories/`
 ### 5.2 Activity Repository
 
 **activity.repository.ts:**
-- `create(activity)` - Direct SQL INSERT to @ATELIERATTN
+- `create(activity)` - Service Layer `createUDO()` to @ATELIERATTN (registered UDO)
 - `findByWorkOrderAndEmployee(docEntry, empId)` - For state checking
 - `getWorkerCurrentState(docEntry, empId)` - Latest record query
 
@@ -240,9 +251,11 @@ Location: `libs/data-access/src/lib/repositories/`
 
 ---
 
-## Phase 6: Auth Module (API)
+## Phase 6: Auth Module (API) ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 61 passing (21 AuthService + 19 SessionService + 8 AuthGuard + 13 AuthController)
 
 > Reference: `specs/user-permission-model.md`, `specs/b1-integration-workflows.md`
 
@@ -278,9 +291,11 @@ Endpoints:
 
 ---
 
-## Phase 7: Work Orders Module (API)
+## Phase 7: Work Orders Module (API) ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 41 passing (24 WorkOrderService + 17 WorkOrderController)
 
 > Reference: `specs/feature-production.md`, `specs/mvp-scope.md`
 
@@ -306,9 +321,11 @@ Endpoints:
 
 ---
 
-## Phase 8: Production Module (API)
+## Phase 8: Production Module (API) ✅ COMPLETED
 
 **Effort:** Medium-Large (~6-8 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 93 passing (34 ActivityService + 29 ProductionEntryService + 5 BreakReasonService + 25 ProductionController)
 
 > Reference: `specs/feature-production.md`, `specs/b1-integration-workflows.md`
 
@@ -361,9 +378,11 @@ Endpoints:
 
 ---
 
-## Phase 9: Team & Calendar Modules (API)
+## Phase 9: Team & Calendar Modules (API) ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-18
+**Tests:** 50 passing (24 TeamService/Controller + 26 CalendarService/Controller)
 
 > Reference: `specs/feature-team-calendar.md`
 
@@ -407,9 +426,11 @@ Endpoints:
 
 ---
 
-## Phase 10: API Bootstrap & Configuration
+## Phase 10: API Bootstrap & Configuration ✅ COMPLETED
 
 **Effort:** Small (~2-4 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 19 passing (17 GlobalExceptionFilter + 2 existing AppController/Service)
 
 > Reference: `specs/operational-standards.md`
 
@@ -442,9 +463,11 @@ Create configuration for:
 
 ---
 
-## Phase 11: Frontend Foundation
+## Phase 11: Frontend Foundation ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 43 passing (12 API client + 7 AuthContext + 16 routes + 5 useApi hooks + 3 App)
 
 > Reference: `specs/operational-standards.md`
 
@@ -519,9 +542,11 @@ Implement route guards for authenticated routes.
 
 ---
 
-## Phase 12: Shared UI Components
+## Phase 12: Shared UI Components ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 168 passing (Button, Input, Modal, Table, Card, Spinner, Layout, NavBar, PageHeader, FormField, Select, SearchInput)
 
 ### 12.1 Core Components
 
@@ -549,9 +574,169 @@ Build reusable UI components:
 
 ---
 
-## Phase 13: Frontend Auth
+## Phase 12.5: Migrate to shadcn/ui + Tailwind CSS v4 ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 211 passing (all component tests updated for Tailwind classes)
+
+> Reference: `specs/ui-component-library.md`
+
+**Note:** This phase uses Tailwind CSS v4 with CSS-first configuration. No `tailwind.config.js` file is needed.
+
+### 12.5.1 Setup Tailwind CSS v4
+
+Install Tailwind CSS v4 with the Vite plugin (recommended for Vite projects):
+
+```bash
+# Tailwind CSS v4 with Vite plugin
+pnpm add tailwindcss @tailwindcss/vite
+
+# shadcn/ui dependencies
+pnpm add class-variance-authority clsx tailwind-merge
+pnpm add @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-tabs
+pnpm add @radix-ui/react-label @radix-ui/react-separator @radix-ui/react-slot
+```
+
+**Critical:** Pin `@radix-ui/react-primitive` to v1.0.2 to avoid `@mui/base` conflict (see `ui-component-library.md`):
+
+```json
+// In root package.json
+{
+  "pnpm": {
+    "overrides": {
+      "@radix-ui/react-primitive": "1.0.2"
+    }
+  }
+}
+```
+
+Update Vite configuration:
+
+```typescript
+// apps/web/vite.config.ts
+import tailwindcss from "@tailwindcss/vite";
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),  // Tailwind v4 Vite plugin - no postcss.config.js needed
+  ],
+});
+```
+
+Create CSS entry point with `@theme` configuration:
+
+```css
+/* apps/web/src/styles/globals.css */
+@import "tailwindcss";
+
+@theme {
+  /* Semantic colors using OKLCH color space */
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.141 0.005 285.823);
+  --color-primary: oklch(0.623 0.214 259.815);
+  /* ... see ui-component-library.md for full theme */
+}
+```
+
+### 12.5.2 Initialize shadcn/ui (Monorepo Support)
+
+The shadcn CLI now supports monorepos natively (December 2024 update).
+
+```bash
+cd apps/web
+pnpm dlx shadcn@latest init
+```
+
+**Important:** For Tailwind CSS v4, leave `tailwind.config` empty in `components.json`:
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "zinc",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui"
+  }
+}
+```
+
+Create `lib/utils.ts` with `cn()` helper.
+
+### 12.5.3 Install shadcn Components
+
+```bash
+pnpm dlx shadcn@latest add button input label card table dialog select badge tabs separator alert
+```
+
+### 12.5.4 Migrate Custom Components
+
+Replace custom SCSS components with shadcn equivalents:
+
+| Remove | Replace With |
+|--------|--------------|
+| `Button/Button.tsx` + `.scss` | `ui/button.tsx` |
+| `Input/Input.tsx` + `.scss` | `ui/input.tsx` |
+| `Modal/Modal.tsx` + `.scss` | `ui/dialog.tsx` |
+| `Table/Table.tsx` + `.scss` | `ui/table.tsx` |
+| `Card/Card.tsx` + `.scss` | `ui/card.tsx` |
+| `Select/Select.tsx` + `.scss` | `ui/select.tsx` |
+| `FormField/` | Compose with `ui/label` |
+
+### 12.5.5 Update Deprecated Utilities (v3 → v4)
+
+Search and replace deprecated utilities throughout the codebase:
+
+| v3 (Remove) | v4 (Replace With) |
+|-------------|-------------------|
+| `flex-grow-*` | `grow-*` |
+| `flex-shrink-*` | `shrink-*` |
+| `text-opacity-*` | `text-{color}/{opacity}` |
+| `bg-opacity-*` | `bg-{color}/{opacity}` |
+| `shadow-sm` | `shadow-xs` |
+| `rounded-sm` | `rounded-xs` |
+| `outline-none` | `outline-hidden` |
+| `ring` (3px) | `ring-3` |
+
+### 12.5.6 Rebuild Layout Components with Tailwind
+
+Update to use Tailwind classes instead of SCSS:
+- `Layout.tsx` - App shell
+- `NavBar.tsx` - Navigation bar
+- `PageHeader.tsx` - Page headers
+- `SearchInput.tsx` - Debounced search
+- `Spinner.tsx` - Loading indicator (custom, Tailwind-styled)
+
+### 12.5.7 Update Tests
+
+- Update component imports in test files
+- Verify all 168+ component tests still pass
+- Add tests for any new shadcn components
+
+### 12.5.8 Remove Old Files
+
+- Delete all `.scss` files from `components/`
+- Remove `tailwind.config.js` if it exists (v4 uses CSS-first config)
+- Remove `postcss.config.js` if using `@tailwindcss/vite`
+- Clean up any remaining custom CSS
+
+---
+
+## Phase 13: Frontend Auth ✅ COMPLETED
+
+**Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 237 passing (26 auth page tests + 211 existing tests)
 
 > Reference: `specs/user-permission-model.md`
 
@@ -593,9 +778,13 @@ Location: `apps/web/src/features/auth/StationSelectPage.tsx`
 
 ---
 
-## Phase 14: Work Order List Page
+## Phase 14: Work Order List Page ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 40 tests passing (WorkOrderListPage: 21, WorkOrderCard: 19)
+**Components:** WorkOrderListPage, WorkOrderCard
+**Route:** `/` (home page for authenticated users with station)
 
 > Reference: `specs/feature-production.md`
 
@@ -633,9 +822,12 @@ Click navigates to detail page.
 
 ---
 
-## Phase 15: Work Order Detail Page
+## Phase 15: Work Order Detail Page ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 33 passing (WorkOrderDetailPage with tabs: General, Documents, Pick List)
+**Components:** WorkOrderDetailPage, GeneralTab, DocumentsTab, PickListTab
 
 > Reference: `specs/feature-production.md`
 
@@ -682,9 +874,12 @@ Location: `apps/web/src/features/work-orders/PickListTab.tsx`
 
 ---
 
-## Phase 16: Production Features (Frontend)
+## Phase 16: Production Features (Frontend) ✅ COMPLETED
 
 **Effort:** Medium-Large (~6-8 hours)
+**Status:** Completed on 2026-01-19
+**Tests:** 73 passing (19 ActivityButtons + 26 BreakReasonModal + 28 ProductionEntryModal)
+**Components:** ActivityButtons, BreakReasonModal, ProductionEntryModal
 
 > Reference: `specs/feature-production.md`
 
@@ -747,9 +942,12 @@ Add ActivityButtons and "Uretimden Giris" button to WorkOrderDetailPage header/a
 
 ---
 
-## Phase 17: Team View Page
+## Phase 17: Team View Page ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-20
+**Tests:** 52 passing (28 MachineCard + 24 TeamPage)
+**Components:** TeamPage, MachineCard
 
 > Reference: `specs/feature-team-calendar.md`
 
@@ -791,9 +989,11 @@ Location: `apps/web/src/features/team/MachineCard.tsx`
 
 ---
 
-## Phase 18: Calendar View Page
+## Phase 18: Calendar View Page ✅ COMPLETED
 
 **Effort:** Medium (~4-6 hours)
+**Status:** Completed on 2026-01-20
+**Tests:** 54 passing (26 CalendarPage + 28 CalendarEventCard)
 
 > Reference: `specs/feature-team-calendar.md`
 
@@ -916,6 +1116,7 @@ Implement:
 | 10 | API Bootstrap | Small |
 | 11 | Frontend Foundation | Medium |
 | 12 | Shared UI Components | Medium |
+| 12.5 | shadcn/ui + Tailwind CSS v4 Migration | Medium |
 | 13 | Frontend Auth | Medium |
 | 14 | Work Order List Page | Medium |
 | 15 | Work Order Detail Page | Medium |
@@ -935,7 +1136,7 @@ Implement:
 1. **Status='R' only** - MES only displays released orders
 2. **Store CODE not text** - Break reasons store code field, not name
 3. **Parameterized queries** - Never interpolate user input in SQL
-4. **Service Layer for B1 writes** - Direct SQL only for UDTs (@tables)
+4. **Service Layer for all writes** - Use `createUDO()` for registered UDOs (check OUDO table), `createUDT()` for plain UDTs - both auto-generate DocEntry
 5. **CSV membership pattern** - Use `',' || field || ',' LIKE '%,' || :id || ',%'` for U_secondEmp checks
 6. **Turkish formatting** - DD.MM.YYYY dates, 1.234,56 numbers, always use locale utilities
 7. **ISO in API, format in UI** - API returns ISO dates/raw numbers, frontend formats for display
@@ -955,7 +1156,28 @@ Implement:
 | `b1-integration-workflows.md` | Production receipts, transaction handling |
 | `user-permission-model.md` | Login flow, station authorization |
 | `i18n-turkish-locale.md` | Date/number formatting, translations |
+| `ui-component-library.md` | shadcn/ui setup, Tailwind CSS v4 config, OKLCH colors, component patterns |
 | `operational-standards.md` | Bootstrap, error handling, audit |
 | `testing-migration-strategy.md` | Test types, migration phases |
 | `current-mes-data-handbook.md` | Complete SQL queries, table schemas |
+
+---
+
+## Future Work / Production Hardening
+
+Items to address before production deployment:
+
+### Security & SSL
+- [ ] **Service Layer SSL Certificate** - Replace `NODE_TLS_REJECT_UNAUTHORIZED=0` with proper certificate trust:
+  - Export SAP's certificate: `openssl s_client -connect <server>:50000 -showcerts`
+  - Use `NODE_EXTRA_CA_CERTS=/path/to/sap-sl-cert.pem` in production
+  - Alternative: Configure custom HTTPS agent in `ServiceLayerService`
+
+### Performance
+- [ ] **Database connection pooling tuning** - Review pool size for production load
+- [ ] **Service Layer session caching** - Consider session reuse across requests
+
+### Monitoring
+- [ ] **Health checks** - Add /health endpoint for HANA and Service Layer connectivity
+- [ ] **Structured logging** - Production-ready logging with correlation IDs
 

@@ -1,0 +1,45 @@
+{
+  "title": "Uretim Bandi Calisanlari",
+  "sections": {
+    "included": "Dahil Olanlar",
+    "available": "Bosta Olanlar",
+    "workers": "Calisanlar",
+    "idle": "Musait"
+  },
+  "filters": {
+    "machine": "Makine",
+    "shift": "Vardiya",
+    "allShifts": "Tumu"
+  },
+  "status": {
+    "assigned": "Gorevli",
+    "available": "Musait",
+    "paused": "Mola"
+  },
+  "columns": {
+    "name": "Ad",
+    "role": "Gorev",
+    "machine": "Makine"
+  },
+  "actions": {
+    "release": "Aciga Al"
+  },
+  "roles": {
+    "mainLinesOperator": "Ana Hatlar Opr.",
+    "securityGuard": "Guvenlik Gorevlisi",
+    "twistingTransferOperator": "Bukum & Aktarma Op.",
+    "twistingTransferTeamLead": "Bukum & Aktarma TL",
+    "driver": "Sofor"
+  },
+  "unstartedOrders": "Baslatilmayan Is Emirleri",
+  "assigned": "Calisanlar",
+  "paused": "Molada",
+  "available": "Musait",
+  "workers": "calisan",
+  "noWorkers": "Calisan yok",
+  "noMachines": "Makine bulunamadi",
+  "machineCount": "makine",
+  "currentShift": "Mevcut Vardiya",
+  "shiftFilter": "Vardiya Filtresi",
+  "selectShift": "Vardiya Sec"
+}

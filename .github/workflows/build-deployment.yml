@@ -1,0 +1,168 @@
+name: Build Deployment Package
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/**'
+      - '!.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., v1.0.0)'
+        required: false
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper versioning
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Building version: ${VERSION}"
+
+      - name: Lint
+        run: pnpm nx run-many -t lint --skip-nx-cache
+
+      - name: Type check
+        run: pnpm nx run-many -t typecheck --skip-nx-cache
+
+      - name: Test
+        run: pnpm nx run-many -t test --skip-nx-cache
+
+      - name: Build API
+        run: NODE_ENV=production pnpm nx build @org/api --configuration=production
+
+      - name: Build Web
+        run: NODE_ENV=production pnpm nx build @org/web --configuration=production
+
+      - name: Create deployment package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DEPLOY_DIR="ansa-mes-${VERSION}"
+          DIST_ROOT="dist-deployment"
+
+          echo "Creating deployment package structure..."
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}
+
+          # Copy API build
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/api
+          cp -r apps/api/dist/* ${DIST_ROOT}/${DEPLOY_DIR}/api/
+
+          # Copy Web build
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/web
+          cp -r apps/web/dist/* ${DIST_ROOT}/${DEPLOY_DIR}/web/
+
+          # Copy deployment scripts
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/scripts
+          cp deployment/*.sh ${DIST_ROOT}/${DEPLOY_DIR}/scripts/
+          chmod +x ${DIST_ROOT}/${DEPLOY_DIR}/scripts/*.sh
+
+          # Copy nginx config
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/nginx
+          cp deployment/nginx.conf ${DIST_ROOT}/${DEPLOY_DIR}/nginx/
+
+          # Copy config template
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/config
+          cp deployment/.env.template ${DIST_ROOT}/${DEPLOY_DIR}/config/.env.example
+
+          # Copy documentation
+          cp deployment/README.md ${DIST_ROOT}/${DEPLOY_DIR}/
+          cp deployment/QUICK-START.md ${DIST_ROOT}/${DEPLOY_DIR}/
+          cp deployment/CHANGELOG.md ${DIST_ROOT}/${DEPLOY_DIR}/
+
+          # Create version file
+          echo "${VERSION}" > ${DIST_ROOT}/${DEPLOY_DIR}/VERSION
+
+          # Create tarball
+          cd ${DIST_ROOT}
+          tar -czf ${DEPLOY_DIR}.tar.gz ${DEPLOY_DIR}
+          cd ..
+
+          echo "Package created: ${DIST_ROOT}/${DEPLOY_DIR}.tar.gz"
+          ls -lh ${DIST_ROOT}/${DEPLOY_DIR}.tar.gz
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ansa-mes-${{ steps.version.outputs.version }}
+          path: dist-deployment/ansa-mes-${{ steps.version.outputs.version }}.tar.gz
+          retention-days: 90
+
+      - name: Create deployment summary
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SIZE=$(du -h dist-deployment/ansa-mes-${VERSION}.tar.gz | cut -f1)
+
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🚀 Deployment Package Built Successfully
+
+          **Version:** \`${VERSION}\`
+          **Package Size:** ${SIZE}
+          **Artifact Name:** \`ansa-mes-${VERSION}\`
+
+          ### Download
+          The deployment package is available as a build artifact for the next 90 days.
+
+          ### Deploy to Client Server
+
+          1. Download the artifact from this workflow run
+          2. Transfer to client server:
+             \`\`\`bash
+             scp ansa-mes-${VERSION}.tar.gz admin@client-server:/tmp/
+             \`\`\`
+          3. Follow the installation guide in the package README.md
+
+          ### Contents
+          - ✅ API (NestJS compiled)
+          - ✅ Web (React built)
+          - ✅ Deployment scripts
+          - ✅ Nginx configuration
+          - ✅ Documentation
+          EOF
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}

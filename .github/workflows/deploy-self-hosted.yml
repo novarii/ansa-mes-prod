@@ -1,0 +1,213 @@
+name: Deploy to Self-Hosted Server
+
+# This workflow is for clients who run a GitHub Actions self-hosted runner
+# on their network with access to the target deployment server.
+#
+# To use this workflow:
+# 1. Set up a self-hosted runner: https://docs.github.com/en/actions/hosting-your-own-runners
+# 2. Configure the runner with tag 'on-prem'
+# 3. Set up repository secrets (see below)
+# 4. Enable this workflow by pushing to 'deploy' branch or triggering manually
+
+on:
+  push:
+    branches:
+      - deploy  # Create this branch when ready to auto-deploy
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (leave empty for latest)'
+        required: false
+        type: string
+      target_server:
+        description: 'Target server IP/hostname'
+        required: true
+        type: string
+
+# Required secrets (configure in repository settings):
+# - DEPLOY_SERVER: IP or hostname of target server (or use workflow input)
+# - DEPLOY_USER: SSH user for deployment
+# - DEPLOY_SSH_KEY: SSH private key for authentication
+# - DEPLOY_PATH: Installation path (default: /opt/ansa-mes)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          fi
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Build
+        run: |
+          NODE_ENV=production pnpm nx build @org/api --configuration=production
+          NODE_ENV=production pnpm nx build @org/web --configuration=production
+
+      - name: Create deployment package
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          DEPLOY_DIR="ansa-mes-${VERSION}"
+          DIST_ROOT="dist-deployment"
+
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/api
+          cp -r apps/api/dist/* ${DIST_ROOT}/${DEPLOY_DIR}/api/
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/web
+          cp -r apps/web/dist/* ${DIST_ROOT}/${DEPLOY_DIR}/web/
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/scripts
+          cp deployment/*.sh ${DIST_ROOT}/${DEPLOY_DIR}/scripts/
+          chmod +x ${DIST_ROOT}/${DEPLOY_DIR}/scripts/*.sh
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/nginx
+          cp deployment/nginx.conf ${DIST_ROOT}/${DEPLOY_DIR}/nginx/
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/config
+          cp deployment/.env.template ${DIST_ROOT}/${DEPLOY_DIR}/config/.env.example
+          cp deployment/README.md ${DIST_ROOT}/${DEPLOY_DIR}/
+          cp deployment/QUICK-START.md ${DIST_ROOT}/${DEPLOY_DIR}/
+          cp deployment/CHANGELOG.md ${DIST_ROOT}/${DEPLOY_DIR}/
+          echo "${VERSION}" > ${DIST_ROOT}/${DEPLOY_DIR}/VERSION
+
+          cd ${DIST_ROOT}
+          tar -czf ${DEPLOY_DIR}.tar.gz ${DEPLOY_DIR}
+          cd ..
+
+      - name: Upload package for deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: dist-deployment/ansa-mes-${{ steps.version.outputs.version }}.tar.gz
+          retention-days: 7
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, on-prem]  # Requires self-hosted runner with 'on-prem' tag
+    environment: production  # Optional: use GitHub environments for approval gates
+
+    steps:
+      - name: Download deployment package
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
+      - name: Set variables
+        id: vars
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          SERVER="${{ inputs.target_server || secrets.DEPLOY_SERVER }}"
+          USER="${{ secrets.DEPLOY_USER }}"
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH || '/opt/ansa-mes' }}"
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "server=${SERVER}" >> $GITHUB_OUTPUT
+          echo "user=${USER}" >> $GITHUB_OUTPUT
+          echo "deploy_path=${DEPLOY_PATH}" >> $GITHUB_OUTPUT
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ steps.vars.outputs.server }} >> ~/.ssh/known_hosts
+
+      - name: Stop application
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} \
+            'sudo systemctl stop ansa-mes' || echo "Service not running"
+
+      - name: Backup current installation
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} \
+            "sudo cp -r ${{ steps.vars.outputs.deploy_path }} ${{ steps.vars.outputs.deploy_path }}.backup.$(date +%Y%m%d-%H%M%S) || echo 'No existing installation to backup'"
+
+      - name: Backup configuration
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} \
+            "sudo cp ${{ steps.vars.outputs.deploy_path }}/.env /tmp/ansa-mes.env.backup || echo 'No .env to backup'"
+
+      - name: Transfer deployment package
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          scp -i ~/.ssh/deploy_key ansa-mes-${VERSION}.tar.gz \
+            ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }}:/tmp/
+
+      - name: Extract and install
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} << 'EOF'
+            cd /tmp
+            tar -xzf ansa-mes-${{ steps.vars.outputs.version }}.tar.gz
+            cd ansa-mes-${{ steps.vars.outputs.version }}
+            sudo ./scripts/install.sh
+          EOF
+
+      - name: Restore configuration
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} \
+            "sudo cp /tmp/ansa-mes.env.backup ${{ steps.vars.outputs.deploy_path }}/.env && \
+             sudo chown ansa:ansa ${{ steps.vars.outputs.deploy_path }}/.env && \
+             sudo chmod 600 ${{ steps.vars.outputs.deploy_path }}/.env"
+
+      - name: Start application
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} \
+            'sudo systemctl start ansa-mes && sudo systemctl status ansa-mes'
+
+      - name: Health check
+        run: |
+          sleep 5  # Wait for app to start
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} \
+            'curl -f http://localhost/health || (sudo journalctl -u ansa-mes -n 50 && exit 1)'
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} \
+            'rm -rf /tmp/ansa-mes-* /tmp/ansa-mes.env.backup' || true
+
+      - name: Deployment summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🚀 Deployment Successful
+
+          **Version:** ${{ steps.vars.outputs.version }}
+          **Server:** ${{ steps.vars.outputs.server }}
+          **Path:** ${{ steps.vars.outputs.deploy_path }}
+
+          The application has been deployed and is running.
+
+          ### Verify
+          \`\`\`bash
+          ssh ${{ steps.vars.outputs.user }}@${{ steps.vars.outputs.server }} 'sudo systemctl status ansa-mes'
+          \`\`\`
+
+          ### Rollback (if needed)
+          Backups are available on the server in \`${{ steps.vars.outputs.deploy_path }}.backup.*\`
+          EOF

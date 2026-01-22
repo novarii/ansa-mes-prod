@@ -1,8 +1,16 @@
 packages:
   - packages/*
   - apps/*
+  - libs/shared/*
+  - libs/*
 
 onlyBuiltDependencies:
   - '@nestjs/core'
   - '@parcel/watcher'
+  - '@sap/hana-client'
+  - '@scarf/scarf'
+  - '@swc/core'
+  - esbuild
   - less
+  - nx
+  - unrs-resolver

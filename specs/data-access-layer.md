@@ -83,10 +83,15 @@ ServiceLayerService
 │   ├── createGoodsReceipt(data) → POST /InventoryGenEntries
 │   └── createGoodsIssue(data) → POST /InventoryGenExits
 │
-└── User-Defined Tables
-    ├── getUDT(tableName, code) → GET /U_{tableName}('{code}')
-    ├── createUDT(tableName, data) → POST /U_{tableName}
-    └── updateUDT(tableName, code, data) → PATCH /U_{tableName}('{code}')
+├── User-Defined Tables (plain UDTs, not in OUDO)
+│   ├── getUDT(tableName, code) → GET /U_{tableName}('{code}')
+│   ├── createUDT(tableName, data) → POST /U_{tableName}
+│   └── updateUDT(tableName, code, data) → PATCH /U_{tableName}('{code}')
+│
+└── User-Defined Objects (UDOs, registered in OUDO)
+    ├── getUDO(udoCode, code) → GET /{udoCode}('{code}')
+    ├── createUDO(udoCode, data) → POST /{udoCode}
+    └── updateUDO(udoCode, code, data) → PATCH /{udoCode}('{code}')
 ```
 
 ### Key Configuration
@@ -99,19 +104,22 @@ ServiceLayerService
 ### Example Usage
 
 ```typescript
-// Create a new MES work order (UDT)
-await this.serviceLayer.createUDT('MES_WORK_ORDERS', {
-  Code: 'WO-2025-001',
-  Name: 'Work Order 2025-001',
-  U_OrderNumber: 'WO-2025-001',
-  U_ProductCode: 'ITEM-001',
-  U_Status: 'draft',
-  U_Quantity: 100,
+// Create activity record (UDO - registered in OUDO)
+// Uses /{udoCode} endpoint → POST /ATELIERATTN
+await this.serviceLayer.createUDO('ATELIERATTN', {
+  Code: 'uuid-here',
+  Name: 'uuid-here',
+  U_WorkOrder: '1234',
+  U_ProcType: 'BAS',
+  U_Start: new Date().toISOString(),
 });
 
-// Update a work order
-await this.serviceLayer.updateUDT('MES_WORK_ORDERS', 'WO-2025-001', {
-  U_Status: 'released',
+// Create a new config record (plain UDT - not in OUDO)
+// Uses /U_{tableName} endpoint → POST /U_MES_CONFIG
+await this.serviceLayer.createUDT('MES_CONFIG', {
+  Code: 'setting-001',
+  Name: 'Setting 001',
+  U_Value: 'true',
 });
 
 // Create a B1 Production Order
@@ -122,6 +130,8 @@ await this.serviceLayer.createProductionOrder({
 });
 ```
 
+> **UDT vs UDO:** Check `SELECT * FROM OUDO WHERE TableName = 'YOUR_TABLE'`. If found, it's a UDO (use `createUDO`). If not, it's a plain UDT (use `createUDT`).
+
 ---
 
 ## When to Use Which
@@ -130,7 +140,7 @@ await this.serviceLayer.createProductionOrder({
 |----------|---------|--------|
 | Read production orders with JOINs | `HanaService` | `query()` |
 | Read work orders (OWOR) | `HanaService` | `query()` |
-| Write activity records (@ATELIERATTN) | `HanaService` | Direct SQL INSERT |
+| Write activity records (@ATELIERATTN) | `ServiceLayerService` | `createUDO()` (UDO) |
 | Post production receipts (OIGN) | `ServiceLayerService` | `createGoodsReceipt()` |
 | Generate reports with complex JOINs | `HanaService` | `query()` |
 | Update SAP standard tables | `ServiceLayerService` | Various methods |
@@ -141,7 +151,11 @@ await this.serviceLayer.createProductionOrder({
 
 1. **Use HANA for JOINs and complex reads** - Service Layer cannot perform table joins; it returns single entities or collections from one table at a time.
 
-2. **Use Service Layer for writes to SAP standard tables** - This ensures B1 business logic runs. For User Defined Tables (`@` tables like `@ATELIERATTN`), direct SQL INSERT/UPDATE is acceptable and often simpler.
+2. **Use Service Layer for writes to SAP standard tables and UDTs/UDOs** - This ensures B1 business logic runs and auto-generates system fields like `DocEntry`. For User Defined Tables:
+   - **UDOs** (registered in OUDO): Use `createUDO()`/`updateUDO()` with endpoint `/{UDOCode}` (e.g., `/ATELIERATTN`)
+   - **Plain UDTs** (not in OUDO): Use `createUDT()`/`updateUDT()` with endpoint `/U_{TableName}` (e.g., `/U_MES_CONFIG`)
+
+   SAP auto-populates required fields (`DocEntry`, `Object`, `UserSign`, etc.). Direct SQL INSERT requires manually handling these fields via sequences, which is error-prone.
 
 3. **Never interpolate user input in SQL** - Always use parameterized queries via `hanaService.query(sql, params)`. This is the primary defense against SQL injection.
 

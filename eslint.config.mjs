@@ -22,9 +22,49 @@ export default [
           enforceBuildableLibDependency: true,
           allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
           depConstraints: [
+            // shared/types can import nothing (except npm packages)
             {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
+              sourceTag: 'type:types',
+              onlyDependOnLibsWithTags: [],
+            },
+            // shared/utils can import shared/types
+            {
+              sourceTag: 'type:utils',
+              onlyDependOnLibsWithTags: ['type:types'],
+            },
+            // shared/i18n can import shared/types and shared/utils
+            {
+              sourceTag: 'type:i18n',
+              onlyDependOnLibsWithTags: ['type:types', 'type:utils'],
+            },
+            // data-access can import shared/types
+            {
+              sourceTag: 'type:data-access',
+              onlyDependOnLibsWithTags: ['type:types'],
+            },
+            // feature-* can import shared/*, data-access, and other feature libraries
+            // (auth decorators/guards are cross-cutting concerns needed by all features)
+            {
+              sourceTag: 'scope:feature',
+              onlyDependOnLibsWithTags: [
+                'scope:shared',
+                'type:data-access',
+                'scope:feature',
+              ],
+            },
+            // apps/api can import all libs
+            {
+              sourceTag: 'scope:api',
+              onlyDependOnLibsWithTags: [
+                'scope:shared',
+                'scope:feature',
+                'type:data-access',
+              ],
+            },
+            // apps/web can only import shared/*
+            {
+              sourceTag: 'scope:web',
+              onlyDependOnLibsWithTags: ['scope:shared'],
             },
           ],
         },

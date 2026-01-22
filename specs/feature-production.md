@@ -216,6 +216,11 @@ All production entries require batch numbers for traceability.
 
 **Example:** `ANS20261218042` = 42nd batch on December 18, 2026
 
+**Batch Sharing:** When a production entry includes both accepted and rejected quantities,
+the **same batch number** is used for both goods receipts (to standard warehouse and FRD warehouse).
+This ensures traceability - rejected items can be traced back to the same production run as accepted items.
+If separate batch tracking is needed for rejects in the future, generate a second batch with `REJ` prefix.
+
 **Generation Logic:**
 
 ```sql
@@ -279,13 +284,31 @@ Production entries are created via SAP Service Layer or DI API as Inventory Rece
 |-------|------|----------|-------------|
 | `Code` | varchar(50) | PK | Unique identifier (UUID recommended) |
 | `Name` | varchar(100) | Yes | Same as Code (SAP UDT requirement) |
+| `DocEntry` | int | Auto | Auto-incrementing ID (system-generated) |
 | `U_WorkOrder` | varchar(20) | Yes | OWOR.DocEntry as string |
 | `U_ResCode` | varchar(20) | Yes | Machine code (ORSC.ResCode) |
 | `U_EmpId` | varchar(20) | Yes | Employee ID |
 | `U_ProcType` | varchar(10) | Yes | BAS/DUR/DEV/BIT |
-| `U_Start` | datetime | Yes | Timestamp of action |
+| `U_Start` | date | Yes | Date of action (date only, no time) |
+| `U_StartTime` | smallint | Yes | Time as HHMM integer (e.g., 1430 = 14:30) |
 | `U_BreakCode` | varchar(20) | No* | Break reason code (*Required for DUR) |
 | `U_Aciklama` | varchar(254) | No | Notes/comments |
+
+### Timestamp & Ordering
+
+**CRITICAL:** The timestamp is stored in two separate fields:
+- `U_Start` = date only (e.g., '2026-01-20')
+- `U_StartTime` = time as HHMM integer (e.g., 1430 for 14:30)
+
+**Problem:** `U_StartTime` only has **minute-level resolution**. If a worker starts (BAS) and stops (DUR) within the same minute, both records have identical timestamps.
+
+**Solution:** Always use `DocEntry` as the final tie-breaker in ORDER BY clauses:
+
+```sql
+ORDER BY "U_Start" DESC, "U_StartTime" DESC, "DocEntry" DESC
+```
+
+`DocEntry` is an auto-incrementing integer that guarantees deterministic ordering even when timestamps are identical.
 
 ### Process Types
 
@@ -368,8 +391,10 @@ SELECT TOP 1 *
 FROM [@ATELIERATTN]
 WHERE U_WorkOrder = @DocEntry
   AND U_EmpId = @EmpId
-ORDER BY U_Start DESC
+ORDER BY U_Start DESC, U_StartTime DESC, DocEntry DESC
 ```
+
+**Note:** The `DocEntry DESC` tie-breaker is essential. Without it, if a worker starts and stops within the same minute, the query may randomly return either record.
 
 ### State Flow
 
@@ -621,6 +646,7 @@ SELECT
     T1.U_Name AS EmployeeName,  -- Assuming employee UDT
     T0.U_ProcType,
     T0.U_Start,
+    T0.U_StartTime,
     T0.U_BreakCode,
     T2.Name AS BreakReasonText,
     T0.U_Aciklama
@@ -628,21 +654,49 @@ FROM [@ATELIERATTN] T0
 LEFT JOIN [@EMPLOYEES] T1 ON T0.U_EmpId = T1.Code
 LEFT JOIN [@BREAKREASON] T2 ON T0.U_BreakCode = T2.Code
 WHERE T0.U_WorkOrder = @DocEntry
-ORDER BY T0.U_Start DESC
+ORDER BY T0.U_Start DESC, T0.U_StartTime DESC, T0.DocEntry DESC
 ```
 
 ### Worker's Current State Query
+
+**CRITICAL:** Must include `DocEntry DESC` as tie-breaker for deterministic results.
 
 ```sql
 SELECT TOP 1
     T0.Code,
     T0.U_ProcType,
     T0.U_Start,
+    T0.U_StartTime,
     T0.U_BreakCode
 FROM [@ATELIERATTN] T0
 WHERE T0.U_WorkOrder = @DocEntry
   AND T0.U_EmpId = @EmpId
-ORDER BY T0.U_Start DESC
+ORDER BY T0.U_Start DESC, T0.U_StartTime DESC, T0.DocEntry DESC
+```
+
+### Batch Query for Multiple Workers' State
+
+For performance, use a window function to get latest activity per worker in one query:
+
+```sql
+SELECT Code, U_EmpId, U_ProcType, U_Start, U_StartTime, U_BreakCode
+FROM (
+    SELECT
+        Code,
+        U_EmpId,
+        U_ProcType,
+        U_Start,
+        U_StartTime,
+        U_BreakCode,
+        ROW_NUMBER() OVER (
+            PARTITION BY U_EmpId
+            ORDER BY U_Start DESC, U_StartTime DESC, DocEntry DESC
+        ) AS rn
+    FROM [@ATELIERATTN]
+    WHERE U_WorkOrder = @DocEntry
+      AND U_EmpId IN (@EmpIdList)
+)
+WHERE rn = 1
 ```
 
 ### Customer Dropdown Query
@@ -720,6 +774,8 @@ WHERE DistNumber LIKE @Prefix + '%'
 2. **Caching:** Break codes and customer list can be cached (refresh every 5 minutes)
 3. **Indexing:** Ensure indexes on OWOR.Status, @ATELIERATTN.U_WorkOrder, @ATELIERATTN.U_EmpId
 4. **Connection Pooling:** Reuse SAP Service Layer connections
+5. **Batch Queries:** Avoid N+1 queries when fetching state for multiple workers. Use window functions (ROW_NUMBER) to get latest activity per worker in a single query.
+6. **Deterministic Ordering:** Always include `DocEntry DESC` in ORDER BY clauses for @ATELIERATTN queries to handle same-minute timestamp collisions.
 
 ---
 

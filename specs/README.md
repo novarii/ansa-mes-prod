@@ -19,11 +19,12 @@ A **spec** is an atomic source of truth document. It can contain:
 
 ## Spec Lookup Table
 
-*Last updated: 2026-01-18*
+*Last updated: 2026-01-19*
 
 | Spec | Description | Key Topics |
 |------|-------------|------------|
 | [mvp-scope.md](./mvp-scope.md) | MVP feature boundary and scope | Included features, deferred features, integration summary |
+| [ui-component-library.md](./ui-component-library.md) | Frontend UI components with shadcn/ui | Tailwind CSS v4, OKLCH colors, shadcn setup, v3→v4 migration |
 | [feature-production.md](./feature-production.md) | Core production flow | Work orders, production entry, activity tracking, pick list |
 | [feature-team-calendar.md](./feature-team-calendar.md) | Supporting views | Team management, calendar view, shift filter |
 | [project-structure.md](./project-structure.md) | Nx monorepo layout and boundaries | Project tree, library boundary rules, Nx config |

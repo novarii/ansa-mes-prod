@@ -20,5 +20,25 @@
     "eslint.config.js",
     "eslint.config.cjs",
     "eslint.config.mjs"
+  ],
+  "references": [
+    {
+      "path": "../../libs/shared/types/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/feature-calendar/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/feature-team/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/feature-production/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/feature-work-orders/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/feature-auth/tsconfig.lib.json"
+    }
   ]
 }

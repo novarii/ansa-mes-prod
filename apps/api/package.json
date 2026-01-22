@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
+    "tags": ["scope:api"],
     "targets": {
       "build": {
         "executor": "nx:run-commands",
@@ -86,6 +87,11 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@org/feature-auth": "workspace:*",
+    "@org/feature-calendar": "workspace:*",
+    "@org/feature-production": "workspace:*",
+    "@org/feature-team": "workspace:*",
+    "@org/feature-work-orders": "workspace:*",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0"

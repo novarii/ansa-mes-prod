@@ -44,7 +44,7 @@
 
 ### Data Flow Summary
 - **READ:** SAP HANA via ODBC/native driver (fast, flexible SQL)
-- **WRITE:** DI API for SAP standard tables (business rules enforced) OR direct SQL for User Defined Tables (@tables)
+- **WRITE:** Service Layer for SAP standard tables AND User Defined Tables (@tables) - auto-generates DocEntry and system fields
 
 ---
 
@@ -74,6 +74,32 @@
 | `OITT` | Ürün Ağacı (Header) | Bill of Materials header |
 | `ITT1` | Ürün Ağacı (Lines) | BOM lines (includes machine assignment) |
 | `OHEM` | Personel | Employees |
+
+### 2.4 ⚠️ CRITICAL: Employee Identification Quirk
+
+**This is a non-obvious quirk inherited from the existing MES deployment.**
+
+The system uses TWO different identifiers for employees:
+
+| Field | Type | Purpose | Example |
+|-------|------|---------|---------|
+| `OHEM.empID` | Integer | Database primary key | 51 |
+| `OHEM.U_password` | String | Login code AND authorization key | '200' |
+
+**Key Points:**
+1. Workers log in using `U_password` as BOTH the ID and PIN (e.g., "200" / "200")
+2. Machine authorization fields (`ORSC.U_defaultEmp`, `ORSC.U_secondEmp`) store **U_password values, NOT empIDs**
+3. After login, `empID` is used for session tracking and database operations
+
+**Example:**
+```
+Hacı Yılmaz: empID=51, U_password='200'
+- Logs in with: 200/200 (the system finds him by U_password='200')
+- Machine authorization checks use '200' (not 51)
+- Activity records store empID=51 for tracking
+```
+
+See `user-permission-model.md` for detailed implementation notes.
 
 ### 2.3 Custom Tables
 
@@ -188,6 +214,23 @@ WHERE "ResType" = 'M'     -- Sadece makineler
 | `M` | Machine (Makine) |
 | `L` | Labor (İşçilik) |
 | `O` | Other (Diğer) |
+
+**⚠️ Machine Authorization UDFs (CRITICAL)**
+
+The `ORSC` table also has User-Defined Fields for worker authorization:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `U_defaultEmp` | String | Default worker's **U_password** (NOT empID!) |
+| `U_secondEmp` | String | Comma-separated list of **U_password** values |
+
+Example:
+```
+U_defaultEmp: "200"              -- Hacı Yılmaz's U_password (empID=51)
+U_secondEmp:  "200,310,172,..."  -- All are U_password values, NOT empIDs!
+```
+
+See `user-permission-model.md` for authorization query patterns.
 
 ---
 
@@ -430,6 +473,28 @@ ORDER BY "CreateDate" DESC, "CreateTime" DESC
 
 ### 9.7 Insert Job Activity
 
+Use Service Layer `createUDO()` since ATELIERATTN is a registered UDO:
+
+```typescript
+// POST /ATELIERATTN (UDO endpoint, not /U_ATELIERATTN)
+await serviceLayer.createUDO('ATELIERATTN', {
+  Code: uuid(),           // UUID (required, unique PK)
+  Name: uuid(),           // SAP UDT requirement
+  U_WorkOrder: String(docEntry),  // OWOR.DocEntry as string
+  U_ResCode: resCode,     // Machine code
+  U_EmpId: String(empId), // Employee ID
+  U_ProcType: 'BAS',      // 'BAS', 'DUR', 'DEV', or 'BIT'
+  U_Start: new Date().toISOString(),
+  U_BreakCode: breakCode, // Break code (for DUR)
+  U_Aciklama: notes,      // Notes
+});
+```
+
+> **UDO vs UDT:** Check `SELECT * FROM OUDO WHERE TableName = 'ATELIERATTN'`. Service Layer auto-populates DocEntry, Object, UserSign, CreateDate, CreateTime.
+
+<details>
+<summary>Legacy SQL (for reference only)</summary>
+
 ```sql
 INSERT INTO "@ATELIERATTN" (
     "Code",
@@ -455,6 +520,7 @@ INSERT INTO "@ATELIERATTN" (
     ?   -- Notes
 )
 ```
+</details>
 
 ---
 
@@ -562,8 +628,8 @@ receipt.Add();
 - Can create views for complex queries
 
 ### 12.2 For Write Operations
-- **SAP Standard Tables:** Use DI API (business rules enforced)
-- **User Defined Tables (@):** Direct SQL INSERT/UPDATE is acceptable
+- **SAP Standard Tables:** Use Service Layer (business rules enforced)
+- **User Defined Tables (@):** Use Service Layer `createUDT()`/`updateUDT()` for auto-generated DocEntry
 - **NEVER** direct SQL UPDATE on OWOR, OITM, etc.
 
 ### 12.3 Real-time Updates

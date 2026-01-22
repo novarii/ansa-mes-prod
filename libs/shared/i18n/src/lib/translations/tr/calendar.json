@@ -1,0 +1,55 @@
+{
+  "title": "Takvim",
+  "views": {
+    "month": "Ay",
+    "week": "Hafta",
+    "day": "Gun"
+  },
+  "navigation": {
+    "today": "Bugun",
+    "previous": "Onceki",
+    "next": "Sonraki"
+  },
+  "days": {
+    "monday": "Pazartesi",
+    "tuesday": "Sali",
+    "wednesday": "Carsamba",
+    "thursday": "Persembe",
+    "friday": "Cuma",
+    "saturday": "Cumartesi",
+    "sunday": "Pazar"
+  },
+  "daysShort": {
+    "monday": "Pts",
+    "tuesday": "Sal",
+    "wednesday": "Car",
+    "thursday": "Per",
+    "friday": "Cum",
+    "saturday": "Cts",
+    "sunday": "Paz"
+  },
+  "months": {
+    "january": "Ocak",
+    "february": "Subat",
+    "march": "Mart",
+    "april": "Nisan",
+    "may": "Mayis",
+    "june": "Haziran",
+    "july": "Temmuz",
+    "august": "Agustos",
+    "september": "Eylul",
+    "october": "Ekim",
+    "november": "Kasim",
+    "december": "Aralik"
+  },
+  "shifts": {
+    "a": "A Vardiyasi",
+    "b": "B Vardiyasi",
+    "c": "C Vardiyasi"
+  },
+  "filters": {
+    "station": "Istasyon",
+    "status": "Durum",
+    "allStations": "Tum Istasyonlar"
+  }
+}
