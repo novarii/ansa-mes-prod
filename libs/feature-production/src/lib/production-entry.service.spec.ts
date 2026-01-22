@@ -22,6 +22,7 @@ describe('ProductionEntryService', () => {
 
   const mockServiceLayerService = {
     createGoodsReceipt: jest.fn(),
+    updateProductionOrder: jest.fn(),
     login: jest.fn(),
     ensureSession: jest.fn(),
     request: jest.fn(),
@@ -248,6 +249,7 @@ describe('ProductionEntryService', () => {
       mockServiceLayerService.createGoodsReceipt.mockResolvedValue({
         DocEntry: 1001,
       });
+      mockServiceLayerService.updateProductionOrder.mockResolvedValue(undefined);
     });
 
     it('should create goods receipt for accepted quantity', async () => {

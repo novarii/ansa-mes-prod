@@ -58,3 +58,4 @@ vitest.config.*.timestamp*
 # AI tool configs (keep or remove based on preference)
 .gemini/
 .mcp.json
+images/

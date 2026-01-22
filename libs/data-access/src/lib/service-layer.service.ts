@@ -297,6 +297,7 @@ export class ServiceLayerService {
    * });
    */
   async createGoodsReceipt(data: unknown): Promise<DocumentResponse> {
+    this.logger.debug(`Creating goods receipt with payload: ${JSON.stringify(data, null, 2)}`);
     const result = await this.request<DocumentResponse>(
       'POST',
       '/InventoryGenEntries',
@@ -305,6 +306,7 @@ export class ServiceLayerService {
     if (!result) {
       throw new Error('Unexpected empty response from createGoodsReceipt');
     }
+    this.logger.debug(`Goods receipt created: DocEntry=${result.DocEntry}`);
     return result;
   }
 

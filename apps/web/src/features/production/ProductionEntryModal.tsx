@@ -69,7 +69,8 @@ export function ProductionEntryModal({
       onSuccess: (data) => {
         setSubmitError(null);
         // Invalidate work order data to refresh
-        queryClient.invalidateQueries({ queryKey: ['workOrder', workOrder?.docEntry] });
+        // Note: Convert docEntry to string to match WorkOrderDetailPage's useParams-based query key
+        queryClient.invalidateQueries({ queryKey: ['workOrder', String(workOrder?.docEntry)] });
         queryClient.invalidateQueries({ queryKey: ['workOrders'] });
         onSuccess();
         onClose();

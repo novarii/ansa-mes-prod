@@ -107,7 +107,8 @@ export function ActivityButtons({
         });
         onStateChange?.(data.state);
         // Also invalidate work order data since finish might affect it
-        queryClient.invalidateQueries({ queryKey: ['workOrder', docEntry] });
+        // Note: Convert docEntry to string to match WorkOrderDetailPage's useParams-based query key
+        queryClient.invalidateQueries({ queryKey: ['workOrder', String(docEntry)] });
       },
       onError: (error) => {
         setActionError(error.message);

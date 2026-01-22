@@ -206,7 +206,8 @@ export class ProductionEntryService {
         workOrder.DocEntry,
         acceptedQty,
         workOrder.Warehouse ?? '03',
-        batchNumber
+        batchNumber,
+        'C' // Complete transaction - updates OWOR.CmpltQty
       );
       acceptedDocEntry = acceptedResult.DocEntry ?? null;
     }
@@ -217,7 +218,8 @@ export class ProductionEntryService {
         workOrder.DocEntry,
         rejectedQty,
         this.REJECT_WAREHOUSE,
-        batchNumber
+        batchNumber,
+        'R' // Reject transaction - updates OWOR.RjctQty
       );
       rejectedDocEntry = rejectedResult.DocEntry ?? null;
     }
@@ -250,25 +252,36 @@ export class ProductionEntryService {
   /**
    * Create a goods receipt via Service Layer
    *
-   * Note: ItemCode is NOT passed - SAP B1 infers it from the production order
-   * when BaseEntry/BaseType are provided.
+   * Creates a goods receipt for the finished product from a production order.
+   * SAP infers ItemCode from the production order - do NOT include it explicitly.
+   * Do NOT include BaseLine - it references WOR1 (raw materials) instead of the finished product.
+   *
+   * @param baseDocEntry - Production order DocEntry
+   * @param quantity - Quantity to receive
+   * @param warehouseCode - Target warehouse ('03'/'SD' for accepted, 'FRD' for rejected)
+   * @param batchNumber - Batch number for tracking
+   * @param transactionType - 'C' for Complete (updates CmpltQty), 'R' for Reject (updates RjctQty)
    */
   private async createGoodsReceipt(
     baseDocEntry: number,
     quantity: number,
     warehouseCode: string,
-    batchNumber: string | null
+    batchNumber: string | null,
+    transactionType: 'C' | 'R' = 'C'
   ): Promise<{ DocEntry?: number }> {
     const today = new Date().toISOString().split('T')[0];
 
-    // Note: Do NOT include ItemCode when referencing a production order (BaseEntry/BaseType)
-    // SAP B1 infers ItemCode from the production order automatically
+    // Link to production order - SAP infers ItemCode from OWOR
+    // TransactionType: 'C' (Complete) updates OWOR.CmpltQty, 'R' (Reject) updates OWOR.RjctQty
+    // Property name is "TransactionType" (not "TranType" which is the DB field name)
+    // Do NOT include BaseLine - it references WOR1 lines (raw materials)
+    // Do NOT include ItemCode - SAP requires it empty when referencing production order
     const documentLine: Record<string, unknown> = {
       Quantity: quantity,
       WarehouseCode: warehouseCode,
       BaseEntry: baseDocEntry,
       BaseType: this.BASE_TYPE_PRODUCTION_ORDER,
-      BaseLine: 0,
+      TransactionType: transactionType, // Service Layer property name (DB field: TranType)
     };
 
     // Add batch number if provided
