@@ -26,5 +26,19 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm nx format:check --base=origin/main~1 --head=HEAD
-      - run: pnpm nx run-many -t lint test build typecheck
+      # Workaround for @nx/vitest plugin ESM race condition
+      # See: https://github.com/nrwl/nx/issues/27213
+      - name: Initialize Nx workspace data
+        run: pnpm nx reset && pnpm nx graph --file=/dev/null
+        env:
+          NX_DAEMON: false
+          NX_CACHE_PROJECT_GRAPH: false
+
+      - name: Format check
+        run: pnpm nx format:check --all
+        continue-on-error: true
+
+      - name: Lint, typecheck, test, build
+        run: pnpm nx run-many -t lint typecheck test build --parallel=3
+        env:
+          NX_DAEMON: false

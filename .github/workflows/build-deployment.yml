@@ -53,6 +53,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Workaround for @nx/vitest plugin ESM race condition
+      # See: https://github.com/nrwl/nx/issues/27213
+      - name: Initialize Nx workspace data
+        run: pnpm nx reset && pnpm nx graph --file=/dev/null
+        env:
+          NX_DAEMON: false
+          NX_CACHE_PROJECT_GRAPH: false
+
       - name: Determine version
         id: version
         run: |
@@ -65,13 +73,19 @@ jobs:
           echo "Building version: ${VERSION}"
 
       - name: Lint
-        run: pnpm nx run-many -t lint --skip-nx-cache
+        run: pnpm nx run-many -t lint --parallel=3
+        env:
+          NX_DAEMON: false
 
       - name: Type check
-        run: pnpm nx run-many -t typecheck --skip-nx-cache
+        run: pnpm nx run-many -t typecheck --parallel=3
+        env:
+          NX_DAEMON: false
 
       - name: Test
-        run: pnpm nx run-many -t test --skip-nx-cache
+        run: pnpm nx run-many -t test --parallel=3
+        env:
+          NX_DAEMON: false
 
       - name: Build API
         run: NODE_ENV=production pnpm nx build @org/api --configuration=production
@@ -96,7 +110,7 @@ jobs:
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/web
           cp -r apps/web/dist/* ${DIST_ROOT}/${DEPLOY_DIR}/web/
 
-          # Copy deployment scripts
+          # Copy Linux deployment scripts
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/scripts
           cp deployment/*.sh ${DIST_ROOT}/${DEPLOY_DIR}/scripts/
           chmod +x ${DIST_ROOT}/${DEPLOY_DIR}/scripts/*.sh
@@ -104,6 +118,12 @@ jobs:
           # Copy nginx config
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/nginx
           cp deployment/nginx.conf ${DIST_ROOT}/${DEPLOY_DIR}/nginx/
+
+          # Copy Windows deployment scripts
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/windows
+          cp deployment/windows/*.ps1 ${DIST_ROOT}/${DEPLOY_DIR}/windows/
+          cp deployment/windows/*.config ${DIST_ROOT}/${DEPLOY_DIR}/windows/
+          cp deployment/windows/README.md ${DIST_ROOT}/${DEPLOY_DIR}/windows/
 
           # Copy config template
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/config
