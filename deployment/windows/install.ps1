@@ -40,16 +40,29 @@ Write-Host "Node.js found: $nodeVersion" -ForegroundColor Green
 # Copy application files
 Write-Host "`n[3/6] Copying application files..." -ForegroundColor Yellow
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$distPath = Join-Path (Split-Path -Parent $scriptDir) "dist"
+$packageRoot = Split-Path -Parent $scriptDir
 
-if (-not (Test-Path $distPath)) {
-    Write-Host "ERROR: dist folder not found at $distPath" -ForegroundColor Red
-    Write-Host "Please ensure you've built the application first." -ForegroundColor Red
+# Check for api/web in package root (release package structure)
+# or under dist/ subfolder (development build structure)
+$apiSource = Join-Path $packageRoot "api"
+$webSource = Join-Path $packageRoot "web"
+
+if (-not (Test-Path $apiSource)) {
+    # Fall back to dist/ subfolder for development builds
+    $distPath = Join-Path $packageRoot "dist"
+    $apiSource = Join-Path $distPath "api"
+    $webSource = Join-Path $distPath "web"
+}
+
+if (-not (Test-Path $apiSource)) {
+    Write-Host "ERROR: API folder not found" -ForegroundColor Red
+    Write-Host "Checked: $(Join-Path $packageRoot 'api')" -ForegroundColor Red
+    Write-Host "Checked: $apiSource" -ForegroundColor Red
+    Write-Host "Please ensure you have the correct release package." -ForegroundColor Red
     exit 1
 }
 
 # Copy API
-$apiSource = Join-Path $distPath "api"
 $apiDest = Join-Path $InstallPath "api"
 if (Test-Path $apiSource) {
     Copy-Item -Path $apiSource -Destination $apiDest -Recurse -Force
@@ -57,7 +70,6 @@ if (Test-Path $apiSource) {
 }
 
 # Copy Web
-$webSource = Join-Path $distPath "web"
 $webDest = Join-Path $InstallPath "web"
 if (Test-Path $webSource) {
     Copy-Item -Path $webSource -Destination $webDest -Recurse -Force
