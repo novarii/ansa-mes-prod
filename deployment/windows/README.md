@@ -52,12 +52,16 @@ HANA_PORT=30015
 HANA_USER=SYSTEM
 HANA_PASSWORD=YourPassword
 HANA_DATABASE=NDB
+HANA_SCHEMA=YourSchema
 
 # SAP Service Layer
-SL_BASE_URL=https://sap-server:50000/b1s/v1
-SL_COMPANY_DB=SBODEMOUS
+SL_BASE_URL=https://sap-server:50000/b1s/v2
+SL_COMPANY=SBODEMOUS
 SL_USERNAME=manager
 SL_PASSWORD=YourPassword
+
+# TLS (set to 0 for self-signed certs)
+NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
 ### 5. Configure IIS for Web UI

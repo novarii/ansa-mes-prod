@@ -96,12 +96,16 @@ HANA_PORT=30015
 HANA_USER=your-user
 HANA_PASSWORD=your-password
 HANA_DATABASE=your-database
+HANA_SCHEMA=your-schema
 
 # SAP Service Layer
-SL_BASE_URL=https://your-sap-server:50000/b1s/v1
-SL_COMPANY_DB=your-company
+SL_BASE_URL=https://your-sap-server:50000/b1s/v2
+SL_COMPANY=your-company
 SL_USERNAME=your-user
 SL_PASSWORD=your-password
+
+# TLS (set to 0 for self-signed certs)
+NODE_TLS_REJECT_UNAUTHORIZED=0
 
 # Session
 SESSION_SECRET=change-this-to-a-secure-random-string
