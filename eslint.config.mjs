@@ -85,4 +85,11 @@ export default [
     // Override or add rules here
     rules: {},
   },
+  {
+    // Allow empty arrow functions in test files (common pattern for mock callbacks)
+    files: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx'],
+    rules: {
+      '@typescript-eslint/no-empty-function': 'off',
+    },
+  },
 ];
