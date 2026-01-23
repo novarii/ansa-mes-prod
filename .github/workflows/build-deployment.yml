@@ -68,13 +68,13 @@ jobs:
           echo "Building version: ${VERSION}"
 
       - name: Lint
-        run: pnpm nx run-many -t lint --skip-nx-cache
+        run: pnpm nx run-many -t lint
 
       - name: Type check
-        run: pnpm nx run-many -t typecheck --skip-nx-cache
+        run: pnpm nx run-many -t typecheck
 
       - name: Test
-        run: pnpm nx run-many -t test --skip-nx-cache
+        run: pnpm nx run-many -t test
 
       - name: Build API
         run: NODE_ENV=production pnpm nx build @org/api --configuration=production
