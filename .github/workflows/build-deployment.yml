@@ -53,14 +53,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Workaround for @nx/vitest plugin ESM race condition
-      # See: https://github.com/nrwl/nx/issues/27213
-      - name: Initialize Nx workspace data
-        run: pnpm nx reset && pnpm nx graph --file=/dev/null
-        env:
-          NX_DAEMON: false
-          NX_CACHE_PROJECT_GRAPH: false
-
       - name: Determine version
         id: version
         run: |
@@ -73,19 +65,13 @@ jobs:
           echo "Building version: ${VERSION}"
 
       - name: Lint
-        run: pnpm nx run-many -t lint --parallel=3
-        env:
-          NX_DAEMON: false
+        run: pnpm nx run-many -t lint
 
       - name: Type check
-        run: pnpm nx run-many -t typecheck --parallel=3
-        env:
-          NX_DAEMON: false
+        run: pnpm nx run-many -t typecheck
 
       - name: Test
-        run: pnpm nx run-many -t test --parallel=3
-        env:
-          NX_DAEMON: false
+        run: pnpm nx run-many -t test
 
       - name: Build API
         run: NODE_ENV=production pnpm nx build @org/api --configuration=production
