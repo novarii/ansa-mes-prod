@@ -11,7 +11,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppRoutes } from './index';
 import { I18nProvider } from '@org/shared-i18n';
 import * as AuthContext from '../context/AuthContext';
-import * as apiModule from '../services/api';
 
 // Mock the auth context
 vi.mock('../context/AuthContext', () => ({

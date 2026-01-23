@@ -93,6 +93,7 @@ export function Modal({
         document.body.style.overflow = '';
       };
     }
+    return undefined;
   }, [isOpen, handleKeyDown]);
 
   if (!isOpen) {

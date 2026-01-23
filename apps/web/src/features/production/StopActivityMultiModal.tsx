@@ -13,7 +13,7 @@ import type {
   WorkerForSelection,
   ActivityActionMultiResponse,
   StopActivityMultiRequest,
-  BreakReasonDto,
+  BreakReason,
 } from '@org/shared-types';
 import { useApiQuery, useApiPost, useApiQueryClient } from '../../hooks/useApi';
 import {
@@ -84,7 +84,7 @@ export function StopActivityMultiModal({
     data: breakReasons,
     isPending: breakReasonsLoading,
     error: breakReasonsError,
-  } = useApiQuery<BreakReasonDto[]>(['breakReasons'], '/break-reasons', undefined, {
+  } = useApiQuery<BreakReason[]>(['breakReasons'], '/break-reasons', undefined, {
     enabled: isOpen,
   });
 
@@ -157,8 +157,8 @@ export function StopActivityMultiModal({
     const lowerSearch = breakSearchTerm.toLowerCase();
     return breakReasons.filter(
       (reason) =>
-        reason.name.toLowerCase().includes(lowerSearch) ||
-        reason.code.toLowerCase().includes(lowerSearch)
+        reason.Name.toLowerCase().includes(lowerSearch) ||
+        reason.Code.toLowerCase().includes(lowerSearch)
     );
   }, [breakReasons, breakSearchTerm]);
 
@@ -441,26 +441,26 @@ export function StopActivityMultiModal({
                   ) : (
                     filteredBreakReasons.map((reason) => (
                       <div
-                        key={reason.code}
-                        data-testid={`break-reason-item-${reason.code}`}
+                        key={reason.Code}
+                        data-testid={`break-reason-item-${reason.Code}`}
                         role="option"
-                        aria-selected={selectedBreakCode === reason.code}
+                        aria-selected={selectedBreakCode === reason.Code}
                         tabIndex={0}
                         className={`flex cursor-pointer items-center justify-between px-4 py-2 transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none ${
-                          selectedBreakCode === reason.code
+                          selectedBreakCode === reason.Code
                             ? 'bg-primary/10 text-primary'
                             : ''
                         }`}
-                        onClick={() => handleBreakReasonSelect(reason.code)}
+                        onClick={() => handleBreakReasonSelect(reason.Code)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            handleBreakReasonSelect(reason.code);
+                            handleBreakReasonSelect(reason.Code);
                           }
                         }}
                       >
-                        <span>{reason.name}</span>
-                        {selectedBreakCode === reason.code && (
+                        <span>{reason.Name}</span>
+                        {selectedBreakCode === reason.Code && (
                           <Check className="size-4 text-primary" />
                         )}
                       </div>

@@ -255,7 +255,7 @@ describe('api', () => {
 
       try {
         await api.get('/test');
-      } catch (error) {
+      } catch {
         // Reset mock for second call
         mockFetch.mockResolvedValueOnce({
           ok: false,

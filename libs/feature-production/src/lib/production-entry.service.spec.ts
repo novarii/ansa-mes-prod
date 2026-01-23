@@ -10,9 +10,7 @@ import { WorkOrderWithDetails } from '@org/shared-types';
 
 describe('ProductionEntryService', () => {
   let service: ProductionEntryService;
-  let workOrderRepository: jest.Mocked<WorkOrderRepository>;
   let serviceLayerService: jest.Mocked<ServiceLayerService>;
-  let hanaService: jest.Mocked<HanaService>;
 
   const mockWorkOrderRepository = {
     findByDocEntry: jest.fn(),
@@ -79,9 +77,7 @@ describe('ProductionEntryService', () => {
     }).compile();
 
     service = module.get<ProductionEntryService>(ProductionEntryService);
-    workOrderRepository = module.get(WorkOrderRepository);
     serviceLayerService = module.get(ServiceLayerService);
-    hanaService = module.get(HanaService);
   });
 
   describe('validateEntry', () => {
@@ -284,9 +280,9 @@ describe('ProductionEntryService', () => {
     });
 
     it('should generate batch number for accepted goods', async () => {
-      await service.reportQuantity(12345, 100, 0, 100);
+      const result = await service.reportQuantity(12345, 100, 0, 100);
 
-      expect(result => result.batchNumber).toBeDefined();
+      expect(result.batchNumber).toBeDefined();
     });
 
     it('should use correct warehouse for accepted goods', async () => {

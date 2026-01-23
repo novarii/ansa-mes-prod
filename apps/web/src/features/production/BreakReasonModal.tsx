@@ -9,7 +9,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useI18n } from '@org/shared-i18n';
-import type { BreakReasonDto, ActivityActionResponse, ActivityStateResponse } from '@org/shared-types';
+import type { BreakReason, ActivityActionResponse, ActivityStateResponse } from '@org/shared-types';
 import { useApiQuery, useApiPost, useApiQueryClient } from '../../hooks/useApi';
 import {
   Dialog,
@@ -68,7 +68,7 @@ export function BreakReasonModal({
     data: breakReasons,
     isPending,
     error: fetchError,
-  } = useApiQuery<BreakReasonDto[]>(['breakReasons'], '/break-reasons', undefined, {
+  } = useApiQuery<BreakReason[]>(['breakReasons'], '/break-reasons', undefined, {
     enabled: isOpen,
   });
 
@@ -113,8 +113,8 @@ export function BreakReasonModal({
     const lowerSearch = searchTerm.toLowerCase();
     return breakReasons.filter(
       (reason) =>
-        reason.name.toLowerCase().includes(lowerSearch) ||
-        reason.code.toLowerCase().includes(lowerSearch)
+        reason.Name.toLowerCase().includes(lowerSearch) ||
+        reason.Code.toLowerCase().includes(lowerSearch)
     );
   }, [breakReasons, searchTerm]);
 
@@ -219,27 +219,27 @@ export function BreakReasonModal({
               ) : (
                 filteredReasons.map((reason) => (
                   <div
-                    key={reason.code}
-                    data-testid={`break-reason-item-${reason.code}`}
-                    data-selected={selectedCode === reason.code ? 'true' : 'false'}
+                    key={reason.Code}
+                    data-testid={`break-reason-item-${reason.Code}`}
+                    data-selected={selectedCode === reason.Code ? 'true' : 'false'}
                     role="option"
-                    aria-selected={selectedCode === reason.code}
+                    aria-selected={selectedCode === reason.Code}
                     tabIndex={0}
                     className={`flex cursor-pointer items-center justify-between px-4 py-3 transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none ${
-                      selectedCode === reason.code
+                      selectedCode === reason.Code
                         ? 'bg-primary/10 text-primary'
                         : ''
                     }`}
-                    onClick={() => handleReasonSelect(reason.code)}
+                    onClick={() => handleReasonSelect(reason.Code)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        handleReasonSelect(reason.code);
+                        handleReasonSelect(reason.Code);
                       }
                     }}
                   >
-                    <span>{reason.name}</span>
-                    {selectedCode === reason.code && (
+                    <span>{reason.Name}</span>
+                    {selectedCode === reason.Code && (
                       <Check className="size-4 text-primary" />
                     )}
                   </div>

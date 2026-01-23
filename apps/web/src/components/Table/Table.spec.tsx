@@ -86,7 +86,7 @@ describe('Table', () => {
         {
           key: 'name',
           header: 'Name',
-          render: (value, row) => <strong data-testid={`name-${row.id}`}>{value}</strong>,
+          render: (value: string | number, row: TestData) => <strong data-testid={`name-${row.id}`}>{String(value)}</strong>,
         },
       ];
 
@@ -115,7 +115,7 @@ describe('Table', () => {
         <Table
           columns={testColumns}
           data={testData}
-          keyExtractor={(row) => `custom-${row.id}`}
+          keyExtractor={(row: TestData) => `custom-${row.id}`}
         />
       );
 

@@ -12,8 +12,8 @@ import { cn } from '@/lib/utils';
 export interface PageHeaderProps {
   /** Page title */
   title: string;
-  /** Optional subtitle */
-  subtitle?: string;
+  /** Optional subtitle (text or React node) */
+  subtitle?: ReactNode;
   /** Path for back button (omit to hide back button) */
   backTo?: string;
   /** Custom back button label */

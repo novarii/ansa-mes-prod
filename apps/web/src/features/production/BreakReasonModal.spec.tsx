@@ -8,14 +8,14 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BreakReasonModal } from './BreakReasonModal';
 import { AuthProvider } from '../../context/AuthContext';
 import { I18nProvider } from '@org/shared-i18n';
 import * as apiModule from '../../services/api';
-import type { BreakReasonDto } from '@org/shared-types';
+import type { BreakReason } from '@org/shared-types';
 
 // Mock the API module
 vi.mock('../../services/api', () => ({
@@ -53,14 +53,14 @@ vi.mock('../../services/api', () => ({
 /**
  * Mock break reasons
  */
-const mockBreakReasons: BreakReasonDto[] = [
-  { code: '1', name: 'Mola' },
-  { code: '2', name: 'Yemek' },
-  { code: '4', name: 'Urun Degisikligi' },
-  { code: '10', name: 'Malzeme Bekleme' },
-  { code: '20', name: 'Ariza' },
-  { code: '30', name: 'Kalite Kontrol' },
-  { code: '73', name: 'Personel Degisimi' },
+const mockBreakReasons: BreakReason[] = [
+  { Code: '1', Name: 'Mola' },
+  { Code: '2', Name: 'Yemek' },
+  { Code: '4', Name: 'Urun Degisikligi' },
+  { Code: '10', Name: 'Malzeme Bekleme' },
+  { Code: '20', Name: 'Ariza' },
+  { Code: '30', Name: 'Kalite Kontrol' },
+  { Code: '73', Name: 'Personel Degisimi' },
 ];
 
 /**

@@ -3,13 +3,10 @@ import {
   WorkOrderStatusMap,
   type WorkOrder,
   type WorkOrderWithDetails,
-  type WorkOrderStatusCode,
-  type CreateWorkOrder,
 } from './work-order.entity.js';
 import {
   ActivityProcessTypeMap,
   type Activity,
-  type ActivityProcessType,
   type WorkerActivityState,
 } from './activity.entity.js';
 import {

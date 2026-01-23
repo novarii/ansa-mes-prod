@@ -60,7 +60,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   },
   ref
 ): React.ReactElement {
-  const { parseNumber } = useI18n();
+  const { parseNumber: _parseNumber } = useI18n();
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     if (onChange) {

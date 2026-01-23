@@ -2,7 +2,12 @@
   "name": "@org/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "check": "pnpm nx run-many -t lint test typecheck build",
+    "check:lint": "pnpm nx run-many -t lint",
+    "check:test": "pnpm nx run-many -t test",
+    "check:build": "pnpm nx run-many -t build"
+  },
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.8.0",

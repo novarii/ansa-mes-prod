@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TeamService } from './team.service';
 import { ResourceRepository, ActivityRepository } from '@org/data-access';
+import type { Machine } from '@org/shared-types';
 
 describe('TeamService', () => {
   let service: TeamService;
@@ -18,7 +19,7 @@ describe('TeamService', () => {
     findAllTodayActivities: jest.fn(),
   };
 
-  const mockMachines = [
+  const mockMachines: Machine[] = [
     {
       ResCode: 'M001',
       ResName: 'BARMAG 1',

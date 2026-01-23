@@ -18,8 +18,6 @@ import {
 describe('ActivityService', () => {
   let service: ActivityService;
   let activityRepository: jest.Mocked<ActivityRepository>;
-  let breakReasonRepository: jest.Mocked<BreakReasonRepository>;
-  let workOrderRepository: jest.Mocked<WorkOrderRepository>;
 
   const mockActivityRepository = {
     create: jest.fn(),
@@ -164,8 +162,6 @@ describe('ActivityService', () => {
 
     service = module.get<ActivityService>(ActivityService);
     activityRepository = module.get(ActivityRepository);
-    breakReasonRepository = module.get(BreakReasonRepository);
-    workOrderRepository = module.get(WorkOrderRepository);
   });
 
   describe('getWorkerState', () => {
@@ -334,7 +330,7 @@ describe('ActivityService', () => {
         U_Aciklama: 'Test note',
       });
 
-      const result = await service.stopWork(
+      await service.stopWork(
         12345,
         100,
         'M001',
@@ -452,7 +448,7 @@ describe('ActivityService', () => {
         U_Aciklama: 'Back from break',
       });
 
-      const result = await service.resumeWork(
+      await service.resumeWork(
         12345,
         100,
         'M001',
