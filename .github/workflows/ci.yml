@@ -26,5 +26,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Reset Nx cache
+        run: pnpm nx reset
+
       - run: pnpm nx format:check --base=origin/main~1 --head=HEAD
-      - run: pnpm nx run-many -t lint test build typecheck
+      - run: pnpm nx run-many -t lint test build typecheck --skip-nx-cache

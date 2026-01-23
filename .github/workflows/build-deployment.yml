@@ -53,6 +53,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Reset Nx cache
+        run: pnpm nx reset
+
       - name: Determine version
         id: version
         run: |
@@ -96,7 +99,7 @@ jobs:
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/web
           cp -r apps/web/dist/* ${DIST_ROOT}/${DEPLOY_DIR}/web/
 
-          # Copy deployment scripts
+          # Copy Linux deployment scripts
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/scripts
           cp deployment/*.sh ${DIST_ROOT}/${DEPLOY_DIR}/scripts/
           chmod +x ${DIST_ROOT}/${DEPLOY_DIR}/scripts/*.sh
@@ -104,6 +107,12 @@ jobs:
           # Copy nginx config
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/nginx
           cp deployment/nginx.conf ${DIST_ROOT}/${DEPLOY_DIR}/nginx/
+
+          # Copy Windows deployment scripts
+          mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/windows
+          cp deployment/windows/*.ps1 ${DIST_ROOT}/${DEPLOY_DIR}/windows/
+          cp deployment/windows/*.config ${DIST_ROOT}/${DEPLOY_DIR}/windows/
+          cp deployment/windows/README.md ${DIST_ROOT}/${DEPLOY_DIR}/windows/
 
           # Copy config template
           mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/config
