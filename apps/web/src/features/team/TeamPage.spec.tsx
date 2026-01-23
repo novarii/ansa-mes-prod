@@ -16,7 +16,7 @@ import { TeamPage } from './TeamPage';
 import { AuthProvider } from '../../context/AuthContext';
 import { I18nProvider } from '@org/shared-i18n';
 import * as apiModule from '../../services/api';
-import type { TeamViewResponse, ShiftListResponse, ShiftCode } from '@org/shared-types';
+import type { TeamViewResponse, ShiftListResponse } from '@org/shared-types';
 
 // Mock the API module
 vi.mock('../../services/api', () => ({

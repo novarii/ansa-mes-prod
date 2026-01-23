@@ -13,7 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { MachineCard } from './MachineCard';
 import { I18nProvider } from '@org/shared-i18n';
-import type { TeamMachineCard, TeamWorker } from '@org/shared-types';
+import type { TeamMachineCard } from '@org/shared-types';
 
 /**
  * Wrapper component with required providers
@@ -80,28 +80,6 @@ const mockFullMachine: TeamMachineCard = {
       status: 'available',
     },
   ],
-};
-
-/**
- * Mock machine with only assigned workers
- */
-const mockAssignedOnlyMachine: TeamMachineCard = {
-  machineCode: 'M002',
-  machineName: 'BARMAG 2',
-  assignedWorkers: [
-    {
-      empId: 104,
-      fullName: 'Fatma Ozturk',
-      status: 'assigned',
-      currentWorkOrder: {
-        docEntry: 6173,
-        docNum: 2026003,
-        itemCode: 'YM00001664',
-      },
-    },
-  ],
-  pausedWorkers: [],
-  availableWorkers: [],
 };
 
 /**

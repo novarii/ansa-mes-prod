@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { CalendarService } from './calendar.service';
 import { WorkOrderRepository, ResourceRepository } from '@org/data-access';
-import type { CalendarViewFilters, WorkOrderStatusCode } from '@org/shared-types';
+import type { CalendarViewFilters, WorkOrderStatusCode, Machine } from '@org/shared-types';
 
 describe('CalendarService', () => {
   let service: CalendarService;
@@ -59,10 +59,10 @@ describe('CalendarService', () => {
     },
   ];
 
-  const mockMachines = [
-    { ResCode: 'M001', ResName: 'BARMAG 1', ResType: 'M' },
-    { ResCode: 'M002', ResName: 'BARMAG 2', ResType: 'M' },
-    { ResCode: 'M003', ResName: 'BARMAG 3', ResType: 'M' },
+  const mockMachines: Machine[] = [
+    { ResCode: 'M001', ResName: 'BARMAG 1', ResType: 'M', U_defaultEmp: '100', U_secondEmp: '101' },
+    { ResCode: 'M002', ResName: 'BARMAG 2', ResType: 'M', U_defaultEmp: '200', U_secondEmp: null },
+    { ResCode: 'M003', ResName: 'BARMAG 3', ResType: 'M', U_defaultEmp: null, U_secondEmp: null },
   ];
 
   beforeEach(async () => {

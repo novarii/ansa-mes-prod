@@ -22,7 +22,7 @@ const spinnerVariants = cva('animate-spin', {
 });
 
 export interface SpinnerProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'color'>,
     VariantProps<typeof spinnerVariants> {
   /** Center the spinner in its container */
   centered?: boolean;

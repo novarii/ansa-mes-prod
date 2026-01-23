@@ -92,11 +92,13 @@
     "@org/feature-production": "workspace:*",
     "@org/feature-team": "workspace:*",
     "@org/feature-work-orders": "workspace:*",
+    "@org/shared-types": "workspace:*",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@nestjs/testing": "^11.0.0"
+    "@nestjs/testing": "^11.0.0",
+    "@types/express": "^5.0.0"
   }
 }

@@ -31,6 +31,8 @@ export interface SelectProps
   fullWidth?: boolean;
   /** Change handler */
   onChange?: (event: ChangeEvent<HTMLSelectElement>) => void;
+  /** Test ID for testing */
+  'data-testid'?: string;
 }
 
 /**

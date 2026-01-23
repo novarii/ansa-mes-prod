@@ -58,7 +58,7 @@ const alignStyles: Record<TableAlignment, string> = {
  * <Table columns={columns} data={items} loading={isLoading} />
  * ```
  */
-export function Table<T extends Record<string, unknown>>({
+export function Table<T extends object>({
   columns,
   data,
   loading = false,

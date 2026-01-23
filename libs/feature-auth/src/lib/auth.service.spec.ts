@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { EmployeeRepository, ResourceRepository } from '@org/data-access';
-import { MachineWithAuthStatus, EmployeeWithAuth } from '@org/shared-types';
+import { Machine, MachineWithAuthStatus, EmployeeWithAuth } from '@org/shared-types';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -252,7 +252,7 @@ describe('AuthService', () => {
       U_password: '200',
     };
 
-    const mockMachine = {
+    const mockMachine: Machine = {
       ResCode: 'M001',
       ResName: 'BARMAG 1',
       ResType: 'M',

@@ -46,7 +46,7 @@ import {
   Spinner,
   PageHeader,
 } from '../../components';
-import { cn } from '@/lib/utils';
+// cn utility available from '@/lib/utils' if needed
 
 export function ComponentShowcase(): React.ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -78,8 +78,8 @@ export function ComponentShowcase(): React.ReactElement {
           </div>
           <div className="flex flex-wrap gap-3">
             <Button disabled>Disabled</Button>
-            <Button variant="success">Success</Button>
-            <Button variant="warning">Warning</Button>
+            <Button variant="default">Primary Action</Button>
+            <Button variant="destructive">Danger Action</Button>
           </div>
         </section>
 

@@ -3,7 +3,6 @@ import type {
   WorkOrderListFilters,
   WorkOrderListItem,
   WorkOrderListResponse,
-  WorkOrderDetailResponse,
   PickListItem,
 } from './work-order.dto.js';
 import type {
@@ -15,13 +14,11 @@ import type {
   StartActivityRequest,
   StopActivityRequest,
   ActivityActionResponse,
-  ActivityStateResponse,
 } from './activity.dto.js';
 import type {
   LoginRequest,
   LoginResponse,
   StationOption,
-  StationSelectRequest,
   SessionInfoResponse,
 } from './auth.dto.js';
 import { DefaultShifts, type TeamViewFilters, type TeamMachineCard } from './team.dto.js';
