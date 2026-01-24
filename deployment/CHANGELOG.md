@@ -6,6 +6,32 @@ Versions are formatted as: `YYYYMMDD-HHMM` (timestamp-based) or semantic version
 
 ---
 
+## [v1.1.0] - 2026-01-24
+
+### Added
+- **Phase 19: Material Backflush (LIFO)** - Automatic inventory reduction when production is completed
+- Stock status indicator in work order detail page showing overall material availability
+- Windows Server deployment guide with IIS configuration and PowerShell scripts
+
+### Changed
+- Refactored stock status display from per-item table column to page-level indicator
+- Improved pick list table UI by removing redundant status column
+
+### Fixed
+- **Critical: React 19 test compatibility** - Fixed all Vitest tests failing with "React.act is not a function"
+  - Set NODE_ENV='test' in Vitest config to load React development build
+  - Added IS_REACT_ACT_ENVIRONMENT flag as required by React 19
+- Fixed backflush service to properly reference production order items (removed ItemCode from BaseType=202 lines)
+- Fixed ESLint dependency-checks warnings for vitest imports
+- Corrected environment variable names in deployment templates
+
+### Technical Details
+- Upgraded @testing-library/react to 16.3.2 for full React 19 support
+- Material backflush uses LIFO (Last-In-First-Out) allocation strategy
+- Backflush creates inventory transfer with proper SAP B1 document references
+
+---
+
 ## [Unreleased]
 
 ### Added

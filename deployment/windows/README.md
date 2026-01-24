@@ -5,9 +5,99 @@
 1. **Windows Server 2019/2022** (or Windows 10/11 for testing)
 2. **Node.js 20 LTS** - [Download](https://nodejs.org/en/download/) or `winget install OpenJS.NodeJS.LTS`
 3. **IIS** (Internet Information Services) - for serving the web UI
-4. **NSSM** (optional) - for running API as a Windows Service - [Download](https://nssm.cc/download)
+4. **NSSM** - for running API as a Windows Service - [Download](https://nssm.cc/download)
+5. **IIS URL Rewrite Module** - [Download](https://www.iis.net/downloads/microsoft/url-rewrite)
+6. **IIS Application Request Routing** - [Download](https://www.iis.net/downloads/microsoft/application-request-routing)
 
-## Quick Start
+## Automated Installation (Recommended)
+
+### 1. Build the Application
+
+On your development machine:
+
+```powershell
+# Build both API and Web
+pnpm nx build @org/api
+pnpm nx build @org/web
+
+# Or use the deployment build script
+./scripts/build-deployment.sh
+```
+
+### 2. Copy Files to Server
+
+Copy the `deployment` folder to your Windows Server:
+- Via network share: `\\server\c$\temp\deployment`
+- Via USB/remote desktop
+- Via SCP/SFTP
+
+### 3. Run Automated Installer
+
+Open PowerShell as Administrator:
+
+```powershell
+cd C:\temp\deployment\windows
+.\install-automated.ps1
+```
+
+The installer will:
+- ✅ Check prerequisites (Node.js, IIS, NSSM)
+- ✅ Create installation directories
+- ✅ Copy application files
+- ✅ **Automatically remove workspace references** from package.json
+- ✅ Install npm dependencies
+- ✅ **Interactively configure .env** or create template
+- ✅ Test API startup
+- ✅ Configure Windows Service with NSSM
+- ✅ **Automatically configure IIS website**
+- ✅ **Automatically configure firewall rules**
+
+#### Installer Options
+
+```powershell
+# Custom install path (default: C:\ansa-mes)
+.\install-automated.ps1 -InstallPath "D:\MyApps\ansa-mes"
+
+# Skip .env configuration prompts (creates template only)
+.\install-automated.ps1 -SkipEnvConfig
+
+# Combined
+.\install-automated.ps1 -InstallPath "D:\ansa-mes" -SkipEnvConfig
+```
+
+### 4. Verify Installation
+
+After installation completes:
+
+```powershell
+# Check service status
+nssm status AnsaMES
+
+# Check website
+Invoke-WebRequest http://localhost -UseBasicParsing
+
+# View API logs
+Get-Content C:\ansa-mes\logs\service.log -Tail 50
+```
+
+### 5. Uninstall (if needed)
+
+```powershell
+cd C:\temp\deployment\windows
+
+# Remove everything
+.\uninstall.ps1
+
+# Keep installation files (only remove service/IIS/firewall)
+.\uninstall.ps1 -KeepData
+```
+
+---
+
+## Manual Installation (Advanced)
+
+<details>
+<summary>Click to expand manual installation steps</summary>
 
 ### 1. Build the Application
 
@@ -64,9 +154,22 @@ SL_PASSWORD=YourPassword
 NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
-### 5. Configure IIS for Web UI
+### 5. Remove Workspace References
+
+Edit `C:\ansa-mes\api\package.json` and remove all workspace dependencies (lines starting with `"@org/feature-` and `"@org/shared-`).
+
+### 6. Install Dependencies
+
+```powershell
+cd C:\ansa-mes\api
+npm install --omit=dev
+```
+
+### 7. Configure IIS for Web UI
 
 #### Option A: Using IIS Manager (GUI)
+
+**Note:** The automated installer handles this automatically. Manual steps provided for reference.
 
 1. Open **IIS Manager** (`inetmgr`)
 2. Right-click **Sites** → **Add Website**
@@ -90,7 +193,9 @@ Import-Module WebAdministration
 New-Website -Name "AnsaMES" -PhysicalPath "C:\ansa-mes\web" -Port 80
 ```
 
-### 6. Configure URL Rewrite for API Proxy
+### 8. Configure URL Rewrite for API Proxy
+
+**Note:** The automated installer creates this automatically.
 
 Create `C:\ansa-mes\web\web.config`:
 
@@ -125,7 +230,9 @@ Create `C:\ansa-mes\web\web.config`:
 
 > **Note:** Install [URL Rewrite Module](https://www.iis.net/downloads/microsoft/url-rewrite) and [Application Request Routing](https://www.iis.net/downloads/microsoft/application-request-routing) for the API proxy to work.
 
-### 7. Start the API Service
+### 9. Start the API Service
+
+**Note:** The automated installer configures this automatically.
 
 #### With NSSM (Recommended):
 
@@ -149,7 +256,7 @@ node main.js
 
 Or create a scheduled task to run at startup.
 
-## Alternative: Using PM2 on Windows
+### 10. Alternative: Using PM2 on Windows
 
 PM2 also works on Windows:
 
@@ -167,7 +274,9 @@ pm2 save
 pm2-startup install
 ```
 
-## Firewall Configuration
+### 11. Configure Firewall
+
+**Note:** The automated installer handles this automatically.
 
 ```powershell
 # Allow HTTP (port 80)
@@ -180,7 +289,24 @@ New-NetFirewallRule -DisplayName "Ansa MES HTTPS" -Direction Inbound -Port 443 -
 New-NetFirewallRule -DisplayName "Ansa MES API" -Direction Inbound -Port 3000 -Protocol TCP -Action Allow
 ```
 
-## SSL/HTTPS Setup
+</details>
+
+---
+
+## Firewall Configuration
+
+The automated installer configures these rules during installation.
+
+To verify firewall rules:
+
+```powershell
+# List Ansa MES firewall rules
+Get-NetFirewallRule -DisplayName "Ansa MES*" | Format-Table DisplayName, Enabled, Direction
+```
+
+## SSL/HTTPS Setup (Optional)
+
+The automated installer sets up HTTP (port 80). For production HTTPS:
 
 ### Using IIS with Let's Encrypt (win-acme)
 
@@ -257,3 +383,29 @@ C:\ansa-mes\
     ├── service.log      # API stdout
     └── error.log        # API stderr
 ```
+
+## Updating an Existing Installation
+
+To update Ansa MES to a new version:
+
+```powershell
+# 1. Stop the service
+nssm stop AnsaMES
+
+# 2. Backup current installation
+Copy-Item C:\ansa-mes C:\ansa-mes-backup -Recurse
+
+# 3. Build new version on dev machine
+pnpm nx build @org/api
+pnpm nx build @org/web
+
+# 4. Copy new deployment folder to server
+
+# 5. Run automated installer (will detect existing installation)
+cd C:\temp\deployment\windows
+.\install-automated.ps1
+
+# 6. Service will restart automatically
+```
+
+The installer will preserve your existing `.env` configuration.
