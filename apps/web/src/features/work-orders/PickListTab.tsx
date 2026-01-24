@@ -21,7 +21,7 @@ import {
 } from '../../components/ui/table';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Spinner } from '../../components/ui/spinner';
-import { Info, Package, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Info, Package, AlertTriangle } from 'lucide-react';
 
 export interface PickListTabProps {
   /** Pick list items */
@@ -131,7 +131,6 @@ export function PickListTab({
                   {t('workOrders.columns.remainingQty')}
                 </TableHead>
                 <TableHead className="text-right">Stok</TableHead>
-                <TableHead>Durum</TableHead>
                 <TableHead>{t('production.pickList.warehouse')}</TableHead>
                 <TableHead>{t('production.movements.unit')}</TableHead>
               </TableRow>
@@ -170,27 +169,6 @@ export function PickListTab({
                     {item.availableQty !== undefined
                       ? formatNumber(item.availableQty, 0)
                       : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {item.stockStatus === 'INSUFFICIENT' ? (
-                      <span
-                        className="inline-flex items-center gap-1 text-destructive"
-                        data-testid={`stock-status-${item.itemCode}`}
-                      >
-                        <AlertTriangle className="size-4" />
-                        Eksik
-                      </span>
-                    ) : item.stockStatus === 'OK' ? (
-                      <span
-                        className="inline-flex items-center gap-1 text-green-600 dark:text-green-400"
-                        data-testid={`stock-status-${item.itemCode}`}
-                      >
-                        <CheckCircle className="size-4" />
-                        Yeterli
-                      </span>
-                    ) : (
-                      '-'
-                    )}
                   </TableCell>
                   <TableCell>{item.warehouse}</TableCell>
                   <TableCell>{item.uom}</TableCell>

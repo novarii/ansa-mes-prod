@@ -212,8 +212,9 @@ export class BackflushService {
     const today = new Date().toISOString().split('T')[0];
 
     const documentLines = materials.map((material) => {
+      // When referencing a Production Order (BaseType=202), SAP B1 derives
+      // ItemCode from the production order line - do NOT include it
       const line: Record<string, unknown> = {
-        ItemCode: material.itemCode,
         Quantity: material.quantity,
         WarehouseCode: material.warehouse,
         BaseType: this.BASE_TYPE_PRODUCTION_ORDER,

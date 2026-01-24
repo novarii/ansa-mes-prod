@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import {
   BackflushService,
-  BatchAllocation,
   MaterialIssue,
-  BackflushResult,
   InsufficientStockError,
 } from './backflush.service';
 import { StockRepository, MaterialRequirement, BatchInfo } from '@org/data-access';
@@ -251,8 +249,9 @@ describe('BackflushService', () => {
         .calls[0][0] as Record<string, unknown>;
       const lines = payload.DocumentLines as Array<Record<string, unknown>>;
 
-      expect(lines[0].BatchNumbers).toHaveLength(2);
-      expect(lines[0].BatchNumbers[0]).toEqual({
+      const batchNumbers = lines[0].BatchNumbers as Array<Record<string, unknown>>;
+      expect(batchNumbers).toHaveLength(2);
+      expect(batchNumbers[0]).toEqual({
         BatchNumber: 'BATCH-001',
         Quantity: 80,
       });
