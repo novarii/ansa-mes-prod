@@ -8,18 +8,21 @@ param(
     [string]$ApiPort = 3000,
     [switch]$SkipIIS = $false,
     [switch]$SkipService = $false,
-    [switch]$Interactive = $true
+    [switch]$SkipEnvConfig = $false
 )
+
+# SkipEnvConfig disables interactive prompts for .env configuration
+$Interactive = -not $SkipEnvConfig
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 # Color-coded output functions
 function Write-Step { param($msg) Write-Host "`n$msg" -ForegroundColor Cyan }
-function Write-Success { param($msg) Write-Host "  ✓ $msg" -ForegroundColor Green }
-function Write-Warning { param($msg) Write-Host "  ⚠ $msg" -ForegroundColor Yellow }
-function Write-Info { param($msg) Write-Host "  → $msg" -ForegroundColor White }
-function Write-Error { param($msg) Write-Host "  ✗ $msg" -ForegroundColor Red }
+function Write-Success { param($msg) Write-Host "  [OK] $msg" -ForegroundColor Green }
+function Write-Warning { param($msg) Write-Host "  [!] $msg" -ForegroundColor Yellow }
+function Write-Info { param($msg) Write-Host "  --> $msg" -ForegroundColor White }
+function Write-Error { param($msg) Write-Host "  [X] $msg" -ForegroundColor Red }
 
 Write-Host @"
 ╔══════════════════════════════════════════════════════════╗
@@ -502,21 +505,21 @@ if ($Interactive) {
 Write-Host "`n"
 Write-Host "╔══════════════════════════════════════════════════════════╗" -ForegroundColor Green
 Write-Host "║                                                          ║" -ForegroundColor Green
-Write-Host "║              Installation Complete! ✓                    ║" -ForegroundColor Green
+Write-Host "║              Installation Complete!                      ║" -ForegroundColor Green
 Write-Host "║                                                          ║" -ForegroundColor Green
 Write-Host "╚══════════════════════════════════════════════════════════╝" -ForegroundColor Green
 
-Write-Host "`n📍 Installation Summary:" -ForegroundColor Cyan
+Write-Host "`nInstallation Summary:" -ForegroundColor Cyan
 Write-Host "   Location: $InstallPath" -ForegroundColor White
 Write-Host "   API Port: $ApiPort" -ForegroundColor White
 Write-Host "   Web Port: $WebPort" -ForegroundColor White
 
-Write-Host "`n🔗 Access URLs:" -ForegroundColor Cyan
+Write-Host "`nAccess URLs:" -ForegroundColor Cyan
 Write-Host "   Local:   http://localhost:$WebPort" -ForegroundColor White
 Write-Host "   Network: http://<server-ip>:$WebPort" -ForegroundColor White
 
 if (-not $SkipService) {
-    Write-Host "`n🔧 Service Management:" -ForegroundColor Cyan
+    Write-Host "`nService Management:" -ForegroundColor Cyan
     Write-Host "   Start:   nssm start AnsaMES" -ForegroundColor White
     Write-Host "   Stop:    nssm stop AnsaMES" -ForegroundColor White
     Write-Host "   Restart: nssm restart AnsaMES" -ForegroundColor White
@@ -524,12 +527,12 @@ if (-not $SkipService) {
     Write-Host "   Logs:    Get-Content '$InstallPath\logs\api.log' -Tail 50 -Wait" -ForegroundColor White
 }
 
-Write-Host "`n📝 Next Steps:" -ForegroundColor Cyan
+Write-Host "`nNext Steps:" -ForegroundColor Cyan
 if (-not $Interactive) {
     Write-Host "   1. Edit .env file: $InstallPath\api\.env" -ForegroundColor Yellow
 }
 Write-Host "   2. Open browser: http://localhost:$WebPort" -ForegroundColor White
 Write-Host "   3. Login with your SAP credentials" -ForegroundColor White
 
-Write-Host "`n✨ Happy Manufacturing!" -ForegroundColor Magenta
+Write-Host "`nHappy Manufacturing!" -ForegroundColor Magenta
 Write-Host ""
