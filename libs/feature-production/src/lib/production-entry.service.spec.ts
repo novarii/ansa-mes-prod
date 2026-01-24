@@ -7,10 +7,12 @@ import {
   HanaService,
 } from '@org/data-access';
 import { WorkOrderWithDetails } from '@org/shared-types';
+import { BackflushService, InsufficientStockError } from './backflush.service';
 
 describe('ProductionEntryService', () => {
   let service: ProductionEntryService;
   let serviceLayerService: jest.Mocked<ServiceLayerService>;
+  let backflushService: jest.Mocked<BackflushService>;
 
   const mockWorkOrderRepository = {
     findByDocEntry: jest.fn(),
@@ -30,6 +32,14 @@ describe('ProductionEntryService', () => {
     query: jest.fn(),
     queryOne: jest.fn(),
     execute: jest.fn(),
+  };
+
+  const mockBackflushService = {
+    executeBackflush: jest.fn(),
+    validateStockAvailability: jest.fn(),
+    calculateMaterialRequirements: jest.fn(),
+    selectBatchesLIFO: jest.fn(),
+    createGoodsIssue: jest.fn(),
   };
 
   const mockWorkOrder: WorkOrderWithDetails = {
@@ -73,11 +83,16 @@ describe('ProductionEntryService', () => {
           provide: HanaService,
           useValue: mockHanaService,
         },
+        {
+          provide: BackflushService,
+          useValue: mockBackflushService,
+        },
       ],
     }).compile();
 
     service = module.get<ProductionEntryService>(ProductionEntryService);
     serviceLayerService = module.get(ServiceLayerService);
+    backflushService = module.get(BackflushService);
   });
 
   describe('validateEntry', () => {
@@ -246,6 +261,12 @@ describe('ProductionEntryService', () => {
         DocEntry: 1001,
       });
       mockServiceLayerService.updateProductionOrder.mockResolvedValue(undefined);
+      // Default: backflush succeeds with no materials to issue
+      mockBackflushService.executeBackflush.mockResolvedValue({
+        success: true,
+        oigeDocEntry: null,
+        materialsIssued: [],
+      });
     });
 
     it('should create goods receipt for accepted quantity', async () => {
@@ -364,6 +385,77 @@ describe('ProductionEntryService', () => {
       await expect(
         service.reportQuantity(12345, 100, 0, 100)
       ).rejects.toThrow('DI API Error');
+    });
+
+    it('should execute backflush before creating goods receipt', async () => {
+      mockBackflushService.executeBackflush.mockResolvedValue({
+        success: true,
+        oigeDocEntry: 5001,
+        materialsIssued: [
+          {
+            itemCode: 'MAT-001',
+            warehouse: 'ITH',
+            quantity: 96.2,
+            lineNum: 0,
+            batches: [{ BatchNumber: 'BATCH-001', Quantity: 96.2 }],
+          },
+        ],
+      });
+
+      const result = await service.reportQuantity(12345, 100, 0, 100);
+
+      expect(backflushService.executeBackflush).toHaveBeenCalledWith(
+        12345,
+        100, // totalEntryQty
+        100  // empId
+      );
+      expect(result.oigeDocEntry).toBe(5001);
+    });
+
+    it('should throw InsufficientStockError when backflush fails due to stock shortage', async () => {
+      const shortages = [
+        {
+          ItemCode: 'MAT-001',
+          ItemName: 'Raw Material',
+          Warehouse: 'ITH',
+          BaseQty: 0.5,
+          RequiredQty: 50,
+          AvailableQty: 30,
+          Shortage: 20,
+          IsBatchManaged: true,
+        },
+      ];
+      mockBackflushService.executeBackflush.mockRejectedValue(
+        new InsufficientStockError(shortages)
+      );
+
+      await expect(
+        service.reportQuantity(12345, 100, 0, 100)
+      ).rejects.toThrow(InsufficientStockError);
+    });
+
+    it('should throw BadRequestException when backflush fails for other reasons', async () => {
+      mockBackflushService.executeBackflush.mockRejectedValue(
+        new Error('Service Layer connection failed')
+      );
+
+      await expect(
+        service.reportQuantity(12345, 100, 0, 100)
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should use total quantity (accepted + rejected) for backflush', async () => {
+      mockServiceLayerService.createGoodsReceipt
+        .mockResolvedValueOnce({ DocEntry: 1001 })
+        .mockResolvedValueOnce({ DocEntry: 1002 });
+
+      await service.reportQuantity(12345, 80, 20, 100);
+
+      expect(backflushService.executeBackflush).toHaveBeenCalledWith(
+        12345,
+        100, // 80 + 20 = 100
+        100
+      );
     });
   });
 });

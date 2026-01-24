@@ -22,7 +22,7 @@ import { Layout, PageHeader, Spinner } from '../../components';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Button } from '../../components/ui/button';
-import { AlertCircle, ClipboardList } from 'lucide-react';
+import { AlertCircle, ClipboardList, CheckCircle, AlertTriangle } from 'lucide-react';
 import { GeneralTab } from './GeneralTab';
 import { DocumentsTab } from './DocumentsTab';
 import { PickListTab } from './PickListTab';
@@ -165,9 +165,12 @@ export function WorkOrderDetailPage(): React.ReactElement {
       <div className="mb-6 space-y-4" data-testid="production-controls">
         {/* Activity Buttons */}
         <div className="rounded-lg border bg-card p-4">
-          <h3 className="mb-3 text-sm font-medium text-muted-foreground">
-            {t('production.activity.currentState')}
-          </h3>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              {t('production.activity.currentState')}
+            </h3>
+            <StockStatusIndicator docEntry={workOrder.docEntry} />
+          </div>
           <div className="flex flex-wrap items-center gap-4">
             <ActivityButtons
               docEntry={workOrder.docEntry}
@@ -235,6 +238,46 @@ export function WorkOrderDetailPage(): React.ReactElement {
 }
 
 /**
+ * Stock status indicator for the Mevcut Durum section
+ */
+function StockStatusIndicator({
+  docEntry,
+}: {
+  docEntry: number;
+}): React.ReactElement | null {
+  const { data, isLoading } = useApiQuery<PickListResponse>(
+    ['pickList', docEntry],
+    `/work-orders/${docEntry}/pick-list`
+  );
+
+  if (isLoading || !data) {
+    return null;
+  }
+
+  if (data.hasStockWarning) {
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-destructive"
+        data-testid="stock-status-warning"
+      >
+        <AlertTriangle className="size-4" />
+        Stok yetersiz
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-sm font-medium text-green-600 dark:text-green-400"
+      data-testid="stock-status-ok"
+    >
+      <CheckCircle className="size-4" />
+      Stok yeterli
+    </span>
+  );
+}
+
+/**
  * Wrapper component for PickListTab to handle data fetching
  */
 function PickListTabWrapper({
@@ -252,6 +295,7 @@ function PickListTabWrapper({
       items={data?.items ?? []}
       isLoading={isLoading}
       error={error}
+      hasStockWarning={data?.hasStockWarning}
     />
   );
 }

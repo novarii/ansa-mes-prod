@@ -1,13 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { WorkOrderService } from './work-order.service';
-import { WorkOrderRepository, PickListRepository } from '@org/data-access';
+import {
+  WorkOrderRepository,
+  PickListRepository,
+  StockRepository,
+  StockAvailability,
+} from '@org/data-access';
 import { WorkOrderWithDetails } from '@org/shared-types';
 
 describe('WorkOrderService', () => {
   let service: WorkOrderService;
   let workOrderRepository: jest.Mocked<WorkOrderRepository>;
   let pickListRepository: jest.Mocked<PickListRepository>;
+  let stockRepository: jest.Mocked<StockRepository>;
 
   const mockWorkOrderRepository = {
     findAll: jest.fn(),
@@ -18,6 +24,14 @@ describe('WorkOrderService', () => {
   const mockPickListRepository = {
     findByWorkOrder: jest.fn(),
     getPendingMaterials: jest.fn(),
+  };
+
+  const mockStockRepository = {
+    getStockAvailabilityForWorkOrder: jest.fn(),
+    getAvailableBatches: jest.fn(),
+    getTotalAvailableQty: jest.fn(),
+    validateStockForEntry: jest.fn(),
+    getMaterialRequirements: jest.fn(),
   };
 
   const mockWorkOrder: WorkOrderWithDetails = {
@@ -78,12 +92,17 @@ describe('WorkOrderService', () => {
           provide: PickListRepository,
           useValue: mockPickListRepository,
         },
+        {
+          provide: StockRepository,
+          useValue: mockStockRepository,
+        },
       ],
     }).compile();
 
     service = module.get<WorkOrderService>(WorkOrderService);
     workOrderRepository = module.get(WorkOrderRepository);
     pickListRepository = module.get(PickListRepository);
+    stockRepository = module.get(StockRepository);
   });
 
   describe('getWorkOrders', () => {
@@ -328,6 +347,41 @@ describe('WorkOrderService', () => {
   });
 
   describe('getPickList', () => {
+    const mockStockAvailability: StockAvailability[] = [
+      {
+        LineNum: 0,
+        ItemCode: 'MAT001',
+        ItemName: 'Material 1',
+        SourceWarehouse: '01',
+        BaseQty: 1,
+        PlannedQty: 100,
+        IssuedQty: 50,
+        RemainingToIssue: 50,
+        AvailableInWarehouse: 200,
+        StockStatus: 'OK',
+        Shortage: 0,
+      },
+      {
+        LineNum: 1,
+        ItemCode: 'MAT002',
+        ItemName: 'Material 2',
+        SourceWarehouse: '01',
+        BaseQty: 1,
+        PlannedQty: 200,
+        IssuedQty: 200,
+        RemainingToIssue: 0,
+        AvailableInWarehouse: 150,
+        StockStatus: 'OK',
+        Shortage: 0,
+      },
+    ];
+
+    beforeEach(() => {
+      stockRepository.getStockAvailabilityForWorkOrder.mockResolvedValue(
+        mockStockAvailability
+      );
+    });
+
     it('should return pick list for work order', async () => {
       workOrderRepository.findByDocEntry.mockResolvedValue(mockWorkOrder);
       pickListRepository.findByWorkOrder.mockResolvedValue(mockPickListItems);
@@ -338,7 +392,7 @@ describe('WorkOrderService', () => {
       expect(result.items).toHaveLength(2);
     });
 
-    it('should transform pick list items to DTO format', async () => {
+    it('should transform pick list items to DTO format with stock status', async () => {
       workOrderRepository.findByDocEntry.mockResolvedValue(mockWorkOrder);
       pickListRepository.findByWorkOrder.mockResolvedValue(mockPickListItems);
 
@@ -352,7 +406,47 @@ describe('WorkOrderService', () => {
         remainingQty: 50,
         warehouse: '01',
         uom: 'KG',
+        availableQty: 200,
+        stockStatus: 'OK',
+        shortage: 0,
       });
+    });
+
+    it('should include stock availability information', async () => {
+      workOrderRepository.findByDocEntry.mockResolvedValue(mockWorkOrder);
+      pickListRepository.findByWorkOrder.mockResolvedValue(mockPickListItems);
+
+      const result = await service.getPickList(12345);
+
+      expect(result.items[0].availableQty).toBe(200);
+      expect(result.items[0].stockStatus).toBe('OK');
+      expect(result.items[0].shortage).toBe(0);
+    });
+
+    it('should set hasStockWarning when any material has insufficient stock', async () => {
+      workOrderRepository.findByDocEntry.mockResolvedValue(mockWorkOrder);
+      pickListRepository.findByWorkOrder.mockResolvedValue(mockPickListItems);
+      stockRepository.getStockAvailabilityForWorkOrder.mockResolvedValue([
+        { ...mockStockAvailability[0] },
+        {
+          ...mockStockAvailability[1],
+          StockStatus: 'INSUFFICIENT',
+          Shortage: 50,
+        },
+      ]);
+
+      const result = await service.getPickList(12345);
+
+      expect(result.hasStockWarning).toBe(true);
+    });
+
+    it('should not set hasStockWarning when all materials have sufficient stock', async () => {
+      workOrderRepository.findByDocEntry.mockResolvedValue(mockWorkOrder);
+      pickListRepository.findByWorkOrder.mockResolvedValue(mockPickListItems);
+
+      const result = await service.getPickList(12345);
+
+      expect(result.hasStockWarning).toBe(false);
     });
 
     it('should throw NotFoundException when work order not found', async () => {
@@ -371,6 +465,7 @@ describe('WorkOrderService', () => {
     it('should return empty items when no materials', async () => {
       workOrderRepository.findByDocEntry.mockResolvedValue(mockWorkOrder);
       pickListRepository.findByWorkOrder.mockResolvedValue([]);
+      stockRepository.getStockAvailabilityForWorkOrder.mockResolvedValue([]);
 
       const result = await service.getPickList(12345);
 
@@ -385,6 +480,52 @@ describe('WorkOrderService', () => {
       );
 
       expect(pickListRepository.findByWorkOrder).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('checkStockStatus', () => {
+    it('should return false when all materials have sufficient stock', async () => {
+      stockRepository.getStockAvailabilityForWorkOrder.mockResolvedValue([
+        {
+          LineNum: 0,
+          ItemCode: 'MAT001',
+          ItemName: 'Material 1',
+          SourceWarehouse: '01',
+          BaseQty: 1,
+          PlannedQty: 100,
+          IssuedQty: 50,
+          RemainingToIssue: 50,
+          AvailableInWarehouse: 200,
+          StockStatus: 'OK',
+          Shortage: 0,
+        },
+      ]);
+
+      const result = await service.checkStockStatus(12345);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return true when any material has insufficient stock', async () => {
+      stockRepository.getStockAvailabilityForWorkOrder.mockResolvedValue([
+        {
+          LineNum: 0,
+          ItemCode: 'MAT001',
+          ItemName: 'Material 1',
+          SourceWarehouse: '01',
+          BaseQty: 1,
+          PlannedQty: 100,
+          IssuedQty: 50,
+          RemainingToIssue: 50,
+          AvailableInWarehouse: 30,
+          StockStatus: 'INSUFFICIENT',
+          Shortage: 20,
+        },
+      ]);
+
+      const result = await service.checkStockStatus(12345);
+
+      expect(result).toBe(true);
     });
   });
 });

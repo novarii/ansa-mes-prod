@@ -55,6 +55,8 @@ export interface WorkOrderListItem {
   machineCode: string;
   /** Machine name */
   machineName: string;
+  /** Whether any material has insufficient stock for remaining quantity */
+  hasStockWarning?: boolean;
 }
 
 /**
@@ -141,6 +143,12 @@ export interface PickListItem {
   warehouse: string;
   /** Unit of measure */
   uom: string;
+  /** Available stock quantity in source warehouse */
+  availableQty?: number;
+  /** Stock status: 'OK' or 'INSUFFICIENT' */
+  stockStatus?: 'OK' | 'INSUFFICIENT';
+  /** Shortage amount (0 if sufficient) */
+  shortage?: number;
 }
 
 /**
@@ -151,4 +159,6 @@ export interface PickListResponse {
   docEntry: number;
   /** List of materials */
   items: PickListItem[];
+  /** Whether any material has insufficient stock */
+  hasStockWarning?: boolean;
 }

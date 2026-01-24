@@ -1047,19 +1047,109 @@ Location: `apps/web/src/features/calendar/CalendarEvent.tsx`
 
 ---
 
-## Phase 19: E2E Tests & Polish
+## Phase 19: Material Backflush (LIFO) ✅ COMPLETED
+
+**Effort:** Medium-Large (~6-8 hours)
+**Status:** Completed on 2026-01-24
+**Tests:** 107 passing (26 stock.repository + 19 backflush.service + 33 production-entry.service + 29 work-order.service)
+**Components:** BackflushService, StockRepository, stock warning UI, pick list stock status
+
+> Reference: `specs/material-backflush.md`
+
+### Overview
+
+Implement automatic material consumption (backflushing) when production entry is recorded. Materials are issued using LIFO (Last In, First Out) batch selection from the warehouse specified in the work order BOM.
+
+### 19.1 Backend: Backflush Service
+
+Location: `libs/feature-production/src/lib/backflush.service.ts`
+
+Implement:
+- `validateStockAvailability(docEntry, entryQty)` - Check if sufficient stock exists for all materials
+- `calculateMaterialRequirements(docEntry, entryQty)` - Calculate material quantities using `WOR1.BaseQty` ratio
+- `selectBatchesLIFO(itemCode, warehouse, requiredQty)` - Select batches newest-first (ORDER BY InDate DESC, AbsEntry DESC)
+- `createGoodsIssue(docEntry, materials, empId)` - Create OIGE via Service Layer
+
+### 19.2 Backend: Stock Availability Repository
+
+Location: `libs/data-access/src/lib/repositories/stock.repository.ts`
+
+Implement:
+- `getAvailableBatches(itemCode, warehouse)` - Query OBTN/OBTQ with LIFO ordering
+- `getStockStatusForWorkOrder(docEntry)` - Check all materials vs available stock
+- `getTotalAvailableQty(itemCode, warehouse)` - Sum of batch quantities
+
+### 19.3 Backend: Update Production Entry Service
+
+Location: `libs/feature-production/src/lib/production-entry.service.ts`
+
+Modify `reportQuantity()`:
+1. Call `backflushService.validateStockAvailability()` first
+2. If insufficient, return error with shortage details
+3. If sufficient, call `backflushService.createGoodsIssue()` before creating OIGN
+4. Handle transaction: if OIGN fails after OIGE, log for manual reversal
+
+### 19.4 Backend: Update Work Order Endpoints
+
+Location: `libs/feature-work-orders/src/lib/work-order.service.ts`
+
+Add:
+- Stock status flag to work order list response (for warning indicator)
+- Stock status column to pick list response
+
+### 19.5 Frontend: Stock Warning on Work Order Card
+
+Location: `apps/web/src/features/work-orders/WorkOrderCard.tsx`
+
+- Add warning icon if any material has insufficient stock
+- Tooltip showing which materials are short
+
+### 19.6 Frontend: Stock Status Column in Pick List
+
+Location: `apps/web/src/features/work-orders/PickListTab.tsx`
+
+- Add "Stok" column showing available quantity
+- Add "Durum" column with status indicator (✓ Yeterli / ⚠️ Eksik)
+- Color code rows with insufficient stock
+
+### 19.7 Frontend: Insufficient Stock Error Modal
+
+Location: `apps/web/src/features/production/ProductionEntryModal.tsx`
+
+- Display detailed error when backflush fails due to insufficient stock
+- Show: material code, name, required qty, available qty, shortage, warehouse
+
+### 19.8 Tests
+
+- Unit tests for LIFO batch selection algorithm
+- Unit tests for material requirement calculation
+- Integration tests for backflush + production entry flow
+- Frontend tests for stock status display
+- Test with batch-managed and non-batch-managed items
+
+### Key Implementation Notes
+
+1. **Filter materials only**: Skip `WOR1.ItemType = 290` (resources/machines)
+2. **Use source warehouse**: Each material has its own warehouse in `WOR1.wareHouse`
+3. **LIFO order**: `ORDER BY OBTN.InDate DESC, OBTN.AbsEntry DESC`
+4. **Batch allocation**: When one batch insufficient, continue to next until fulfilled
+5. **Non-batch items**: Skip batch selection, issue directly from warehouse
+
+---
+
+## Phase 20: E2E Tests & Polish
 
 **Effort:** Medium (~4-6 hours)
 
 > Reference: `specs/testing-migration-strategy.md`
 
-### 19.1 E2E Test Setup
+### 20.1 E2E Test Setup
 
 Location: `apps/web-e2e/`
 
 Configure Playwright for critical user flows.
 
-### 19.2 Critical E2E Flows
+### 20.2 Critical E2E Flows
 
 - Login → station select → view work orders
 - Start/stop/resume/finish activity cycle
@@ -1067,7 +1157,7 @@ Configure Playwright for critical user flows.
 - Team view filtering
 - Calendar navigation and event click
 
-### 19.3 Polish & Bug Fixes
+### 20.3 Polish & Bug Fixes
 
 - Address any issues found during E2E testing
 - Verify Turkish formatting throughout
@@ -1075,13 +1165,13 @@ Configure Playwright for critical user flows.
 
 ---
 
-## Phase 20: Audit & Feature Flags
+## Phase 21: Audit & Feature Flags
 
 **Effort:** Small (~2-4 hours)
 
 > Reference: `specs/operational-standards.md`
 
-### 20.1 Audit Service
+### 21.1 Audit Service
 
 Location: `libs/data-access/src/lib/audit.service.ts`
 
@@ -1089,7 +1179,7 @@ Implement:
 - `log(entityType, entityId, action, changes, userId)`
 - Insert to audit table with JSON changes
 
-### 20.2 Feature Flag Service
+### 21.2 Feature Flag Service
 
 Location: `libs/shared/utils/src/lib/feature-flags.service.ts`
 
@@ -1123,10 +1213,11 @@ Implement:
 | 16 | Production Features (Frontend) | Medium-Large |
 | 17 | Team View Page | Medium |
 | 18 | Calendar View Page | Medium |
-| 19 | E2E Tests & Polish | Medium |
-| 20 | Audit & Feature Flags | Small |
+| 19 | Material Backflush (LIFO) | Medium-Large |
+| 20 | E2E Tests & Polish | Medium |
+| 21 | Audit & Feature Flags | Small |
 
-**Estimated total phases: 20**
+**Estimated total phases: 21**
 **Most phases: 4-6 hours each**
 
 ---

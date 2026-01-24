@@ -562,6 +562,119 @@ describe('ProductionEntryModal', () => {
       });
     });
 
+    it('should show detailed error for insufficient stock', async () => {
+      const user = userEvent.setup();
+
+      // Create error with INSUFFICIENT_STOCK type and details
+      const mockStockError = Object.assign(
+        new apiModule.ApiRequestError({
+          statusCode: 400,
+          message: 'Yetersiz hammadde stogu',
+          error: 'INSUFFICIENT_STOCK',
+          timestamp: '2026-01-24T10:00:00Z',
+          path: '/api/work-orders/6171/production-entry',
+          correlationId: 'abc-456',
+        }),
+        {
+          details: [
+            {
+              itemCode: 'HM00000056',
+              itemName: 'EXXON MOBIL PP5032E5',
+              required: 96.2,
+              available: 50.0,
+              shortage: 46.2,
+              warehouse: 'ITH',
+              uom: 'Kilogram',
+            },
+          ],
+        }
+      );
+      vi.mocked(apiModule.api.post).mockRejectedValue(mockStockError);
+
+      renderWithProviders();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/kabul/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/kabul/i), '100');
+
+      const saveButton = screen.getByRole('button', { name: /kaydet/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        // Should show stock error alert
+        expect(screen.getByTestId('submit-error')).toBeInTheDocument();
+        // Should show header
+        expect(screen.getByText(/yetersiz hammadde stogu/i)).toBeInTheDocument();
+        // Should show material code
+        expect(screen.getByText(/HM00000056/)).toBeInTheDocument();
+        // Should show material name
+        expect(screen.getByText(/EXXON MOBIL PP5032E5/)).toBeInTheDocument();
+        // Should show shortage detail item
+        expect(screen.getByTestId('shortage-item-HM00000056')).toBeInTheDocument();
+        // Should show contact message
+        expect(screen.getByText(/depo sorumlusu/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should show multiple materials in stock error', async () => {
+      const user = userEvent.setup();
+
+      const mockStockError = Object.assign(
+        new apiModule.ApiRequestError({
+          statusCode: 400,
+          message: 'Yetersiz hammadde stogu',
+          error: 'INSUFFICIENT_STOCK',
+          timestamp: '2026-01-24T10:00:00Z',
+          path: '/api/work-orders/6171/production-entry',
+          correlationId: 'abc-789',
+        }),
+        {
+          details: [
+            {
+              itemCode: 'HM00000056',
+              itemName: 'Material A',
+              required: 100,
+              available: 50,
+              shortage: 50,
+              warehouse: '03',
+              uom: 'KG',
+            },
+            {
+              itemCode: 'YMZ00000140',
+              itemName: 'Material B',
+              required: 200,
+              available: 100,
+              shortage: 100,
+              warehouse: '03',
+              uom: 'KG',
+            },
+          ],
+        }
+      );
+      vi.mocked(apiModule.api.post).mockRejectedValue(mockStockError);
+
+      renderWithProviders();
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/kabul/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/kabul/i), '100');
+
+      const saveButton = screen.getByRole('button', { name: /kaydet/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        // Should show both materials
+        expect(screen.getByTestId('shortage-item-HM00000056')).toBeInTheDocument();
+        expect(screen.getByTestId('shortage-item-YMZ00000140')).toBeInTheDocument();
+        expect(screen.getByText(/Material A/)).toBeInTheDocument();
+        expect(screen.getByText(/Material B/)).toBeInTheDocument();
+      });
+    });
+
     it('should disable save button during submission', async () => {
       const user = userEvent.setup();
       vi.mocked(apiModule.api.post).mockImplementation(

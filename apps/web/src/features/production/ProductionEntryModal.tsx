@@ -24,7 +24,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Spinner } from '../../components';
-import { AlertCircle, Package, CheckCircle } from 'lucide-react';
+import { AlertCircle, Package, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export interface ProductionEntryModalProps {
   /** Whether the modal is open */
@@ -40,6 +40,28 @@ export interface ProductionEntryModalProps {
 interface ProductionEntryRequest {
   acceptedQty: number;
   rejectedQty: number;
+}
+
+/**
+ * Material shortage detail from INSUFFICIENT_STOCK error
+ */
+interface MaterialShortage {
+  itemCode: string;
+  itemName: string;
+  required: number;
+  available: number;
+  shortage: number;
+  warehouse: string;
+  uom: string;
+}
+
+/**
+ * Parsed error state with optional shortage details
+ */
+interface ErrorState {
+  message: string;
+  isStockError: boolean;
+  shortages: MaterialShortage[];
 }
 
 /**
@@ -59,14 +81,14 @@ export function ProductionEntryModal({
   // Local state
   const [acceptedQty, setAcceptedQty] = useState<number | ''>('');
   const [rejectedQty, setRejectedQty] = useState<number | ''>('');
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<ErrorState | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Production entry mutation
   const entryMutation = useApiPost<ProductionEntryResponse, ProductionEntryRequest>(
     `/work-orders/${workOrder?.docEntry}/production-entry`,
     {
-      onSuccess: (data) => {
+      onSuccess: () => {
         setSubmitError(null);
         // Invalidate work order data to refresh
         // Note: Convert docEntry to string to match WorkOrderDetailPage's useParams-based query key
@@ -75,8 +97,16 @@ export function ProductionEntryModal({
         onSuccess();
         onClose();
       },
-      onError: (error) => {
-        setSubmitError(error.message);
+      onError: (error: Error & { errorType?: string; details?: MaterialShortage[] }) => {
+        // Check if this is an INSUFFICIENT_STOCK error
+        const isStockError = error.errorType === 'INSUFFICIENT_STOCK';
+        const shortages = isStockError && Array.isArray(error.details) ? error.details : [];
+
+        setSubmitError({
+          message: error.message,
+          isStockError,
+          shortages,
+        });
       },
     }
   );
@@ -251,9 +281,44 @@ export function ProductionEntryModal({
 
           {/* Error alerts */}
           {submitError && (
-            <Alert variant="destructive" role="alert">
-              <AlertCircle className="size-4" />
-              <AlertDescription>{submitError}</AlertDescription>
+            <Alert variant="destructive" role="alert" data-testid="submit-error">
+              {submitError.isStockError ? (
+                <AlertTriangle className="size-4" />
+              ) : (
+                <AlertCircle className="size-4" />
+              )}
+              <AlertDescription>
+                {submitError.isStockError ? (
+                  <div className="space-y-3">
+                    <p className="font-medium">Yetersiz hammadde stogu:</p>
+                    <ul className="space-y-2">
+                      {submitError.shortages.map((item) => (
+                        <li
+                          key={item.itemCode}
+                          className="rounded border border-destructive/30 bg-destructive/5 p-2 text-sm"
+                          data-testid={`shortage-item-${item.itemCode}`}
+                        >
+                          <div className="font-medium">
+                            {item.itemCode} ({item.itemName})
+                          </div>
+                          <div className="text-muted-foreground">
+                            Gerekli: {formatNumber(item.required)} {item.uom} | Mevcut:{' '}
+                            {formatNumber(item.available)} {item.uom}
+                          </div>
+                          <div className="text-destructive">
+                            Eksik: {formatNumber(item.shortage)} {item.uom} (Depo: {item.warehouse})
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-sm text-muted-foreground">
+                      Lutfen depo sorumlusu ile iletisime gecin.
+                    </p>
+                  </div>
+                ) : (
+                  submitError.message
+                )}
+              </AlertDescription>
             </Alert>
           )}
 

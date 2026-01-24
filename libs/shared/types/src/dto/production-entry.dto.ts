@@ -28,6 +28,8 @@ export interface ProductionEntryResponse {
   acceptedDocEntry: number | null;
   /** SAP document entry for rejected goods (OIGN) */
   rejectedDocEntry: number | null;
+  /** SAP document entry for goods issue (OIGE) from backflush */
+  oigeDocEntry?: number | null;
   /** Updated work order quantities */
   workOrder: {
     docEntry: number;
