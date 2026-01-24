@@ -18,5 +18,10 @@ export default defineConfig(() => ({
       provider: 'v8' as const,
     },
     setupFiles: ['./src/test-setup.ts'],
+    // React 19 only exports `act` in development mode, not production
+    // See: https://github.com/facebook/react/issues/29000
+    env: {
+      NODE_ENV: 'test',
+    },
   },
 }));

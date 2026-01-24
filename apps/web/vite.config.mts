@@ -52,5 +52,10 @@ export default defineConfig(() => ({
       reportsDirectory: './test-output/vitest/coverage',
       provider: 'v8' as const,
     },
+    // React 19 only exports `act` in development mode, not production
+    // See: https://github.com/facebook/react/issues/29000
+    env: {
+      NODE_ENV: 'test',
+    },
   },
 }));
