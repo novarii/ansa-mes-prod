@@ -8,6 +8,7 @@ import { ResourceRepository } from './repositories/resource.repository';
 import { EmployeeRepository } from './repositories/employee.repository';
 import { BreakReasonRepository } from './repositories/break-reason.repository';
 import { PickListRepository } from './repositories/pick-list.repository';
+import { StockRepository } from './repositories/stock.repository';
 
 /**
  * DataAccessModule provides access to SAP HANA and Service Layer.
@@ -42,6 +43,7 @@ import { PickListRepository } from './repositories/pick-list.repository';
     EmployeeRepository,
     BreakReasonRepository,
     PickListRepository,
+    StockRepository,
   ],
   exports: [
     HanaService,
@@ -52,6 +54,7 @@ import { PickListRepository } from './repositories/pick-list.repository';
     EmployeeRepository,
     BreakReasonRepository,
     PickListRepository,
+    StockRepository,
   ],
 })
 export class DataAccessModule {}

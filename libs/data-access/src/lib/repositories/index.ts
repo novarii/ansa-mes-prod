@@ -10,3 +10,4 @@ export * from './resource.repository';
 export * from './employee.repository';
 export * from './break-reason.repository';
 export * from './pick-list.repository';
+export * from './stock.repository';

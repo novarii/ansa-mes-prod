@@ -242,4 +242,35 @@ describe('WorkOrderCard', () => {
       expect(card).toHaveAttribute('aria-label');
     });
   });
+
+  describe('stock warning', () => {
+    it('should show stock warning when hasStockWarning is true', () => {
+      const workOrderWithWarning: WorkOrderListItem = {
+        ...mockWorkOrder,
+        hasStockWarning: true,
+      };
+
+      renderWithProviders(workOrderWithWarning);
+
+      expect(screen.getByTestId('stock-warning')).toBeInTheDocument();
+      expect(screen.getByText(/yetersiz hammadde stogu/i)).toBeInTheDocument();
+    });
+
+    it('should not show stock warning when hasStockWarning is false', () => {
+      const workOrderNoWarning: WorkOrderListItem = {
+        ...mockWorkOrder,
+        hasStockWarning: false,
+      };
+
+      renderWithProviders(workOrderNoWarning);
+
+      expect(screen.queryByTestId('stock-warning')).not.toBeInTheDocument();
+    });
+
+    it('should not show stock warning when hasStockWarning is undefined', () => {
+      renderWithProviders(mockWorkOrder);
+
+      expect(screen.queryByTestId('stock-warning')).not.toBeInTheDocument();
+    });
+  });
 });

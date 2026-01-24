@@ -13,7 +13,7 @@ import { useI18n } from '@org/shared-i18n';
 import type { WorkOrderListItem } from '@org/shared-types';
 import { Card, CardContent, Badge } from '@/components';
 import { cn } from '@/lib/utils';
-import { Calendar, Package, Factory, User } from 'lucide-react';
+import { Calendar, Package, Factory, User, AlertTriangle } from 'lucide-react';
 
 /**
  * Props for WorkOrderCard component
@@ -167,6 +167,17 @@ export function WorkOrderCard({
             </div>
           </div>
         </div>
+
+        {/* Stock warning */}
+        {workOrder.hasStockWarning && (
+          <div
+            className="flex items-center gap-2 mb-3 p-2 bg-warning/10 rounded-md text-warning-foreground border border-warning/30"
+            data-testid="stock-warning"
+          >
+            <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+            <span className="text-sm">Yetersiz hammadde stogu</span>
+          </div>
+        )}
 
         {/* Footer: Customer and due date */}
         <div className="flex items-center justify-between pt-3 border-t border-border text-sm">

@@ -252,6 +252,7 @@ function PickListTabWrapper({
       items={data?.items ?? []}
       isLoading={isLoading}
       error={error}
+      hasStockWarning={data?.hasStockWarning}
     />
   );
 }

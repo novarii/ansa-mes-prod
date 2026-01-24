@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import {
   WorkOrderRepository,
   ServiceLayerService,
@@ -9,6 +9,7 @@ import {
   ProductionEntryValidation,
   BatchNumberResult,
 } from '@org/shared-types';
+import { BackflushService, InsufficientStockError } from './backflush.service';
 
 /**
  * Result from batch sequence query
@@ -34,6 +35,8 @@ interface BatchSequenceResult {
  */
 @Injectable()
 export class ProductionEntryService {
+  private readonly logger = new Logger(ProductionEntryService.name);
+
   /** Warehouse code for rejected/scrap goods */
   private readonly REJECT_WAREHOUSE = 'FRD';
 
@@ -43,7 +46,8 @@ export class ProductionEntryService {
   constructor(
     private readonly workOrderRepository: WorkOrderRepository,
     private readonly serviceLayerService: ServiceLayerService,
-    private readonly hanaService: HanaService
+    private readonly hanaService: HanaService,
+    private readonly backflushService: BackflushService
   ) {}
 
   /**
@@ -161,6 +165,13 @@ export class ProductionEntryService {
    * Report production quantities
    *
    * Creates goods receipts in SAP for accepted and/or rejected quantities.
+   * If backflush is enabled, issues raw materials (OIGE) before creating
+   * goods receipts (OIGN) for finished products.
+   *
+   * Flow:
+   * 1. Validate production quantities
+   * 2. Execute backflush (OIGE) - issues raw materials with LIFO batch selection
+   * 3. Create goods receipt (OIGN) - receives finished product
    *
    * @param docEntry - Work order DocEntry
    * @param acceptedQty - Quantity of good products (to standard warehouse)
@@ -188,6 +199,8 @@ export class ProductionEntryService {
       throw new BadRequestException(`Work order not found: ${docEntry}`);
     }
 
+    const totalEntryQty = acceptedQty + rejectedQty;
+    let oigeDocEntry: number | null = null;
     let acceptedDocEntry: number | null = null;
     let rejectedDocEntry: number | null = null;
     let batchNumber: string | null = null;
@@ -195,12 +208,41 @@ export class ProductionEntryService {
     // Generate batch number if any quantity will be reported
     // Note: Same batch number is used for both accepted and rejected quantities
     // for traceability. See specs/feature-production.md for details.
-    if (acceptedQty > 0 || rejectedQty > 0) {
+    if (totalEntryQty > 0) {
       const batchResult = await this.generateBatchNumber();
       batchNumber = batchResult.batchNumber;
     }
 
-    // Create goods receipt for accepted quantity
+    // Step 1: Execute backflush (issue raw materials)
+    // This creates OIGE documents before OIGN for proper material tracking
+    try {
+      const backflushResult = await this.backflushService.executeBackflush(
+        docEntry,
+        totalEntryQty,
+        empId
+      );
+      oigeDocEntry = backflushResult.oigeDocEntry;
+
+      if (oigeDocEntry) {
+        this.logger.log(
+          `Backflush completed: OIGE DocEntry=${oigeDocEntry} for WO ${docEntry}`
+        );
+      }
+    } catch (error) {
+      if (error instanceof InsufficientStockError) {
+        // Re-throw insufficient stock errors - they have structured details
+        throw error;
+      }
+      // Log and wrap other backflush errors
+      this.logger.error(
+        `Backflush failed for WO ${docEntry}: ${error instanceof Error ? error.message : error}`
+      );
+      throw new BadRequestException(
+        'Malzeme cikisi basarisiz oldu. Lutfen tekrar deneyin.'
+      );
+    }
+
+    // Step 2: Create goods receipt for accepted quantity (OIGN)
     if (acceptedQty > 0) {
       const acceptedResult = await this.createGoodsReceipt(
         workOrder.DocEntry,
@@ -212,7 +254,7 @@ export class ProductionEntryService {
       acceptedDocEntry = acceptedResult.DocEntry ?? null;
     }
 
-    // Create goods receipt for rejected quantity (uses same batch number)
+    // Step 3: Create goods receipt for rejected quantity (uses same batch number)
     if (rejectedQty > 0) {
       const rejectedResult = await this.createGoodsReceipt(
         workOrder.DocEntry,
@@ -239,6 +281,7 @@ export class ProductionEntryService {
       batchNumber,
       acceptedDocEntry,
       rejectedDocEntry,
+      oigeDocEntry,
       workOrder: {
         docEntry,
         completedQty: newCompletedQty,

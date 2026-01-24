@@ -3,7 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { WorkOrderRepository, PickListRepository } from '@org/data-access';
+import {
+  WorkOrderRepository,
+  PickListRepository,
+  StockRepository,
+} from '@org/data-access';
 import type {
   WorkOrderListResponse,
   WorkOrderListItem,
@@ -60,7 +64,8 @@ export interface WorkOrderQueryFilters {
 export class WorkOrderService {
   constructor(
     private readonly workOrderRepository: WorkOrderRepository,
-    private readonly pickListRepository: PickListRepository
+    private readonly pickListRepository: PickListRepository,
+    private readonly stockRepository: StockRepository
   ) {}
 
   /**
@@ -182,10 +187,11 @@ export class WorkOrderService {
   /**
    * Get pick list (BOM materials) for a work order
    *
-   * The pick list is READ-ONLY in MES - material issues are done in SAP B1.
+   * Includes stock availability status for each material to show
+   * warnings when stock is insufficient.
    *
    * @param docEntry - Work order DocEntry
-   * @returns Pick list with materials
+   * @returns Pick list with materials and stock status
    * @throws NotFoundException when work order not found
    * @throws BadRequestException when docEntry is invalid
    */
@@ -201,21 +207,61 @@ export class WorkOrderService {
       throw new NotFoundException('Is emri bulunamadi');
     }
 
+    // Get materials and stock availability
     const materials = await this.pickListRepository.findByWorkOrder(docEntry);
+    const stockAvailability =
+      await this.stockRepository.getStockAvailabilityForWorkOrder(docEntry);
 
-    const items: PickListItem[] = materials.map((m) => ({
-      itemCode: m.ItemCode,
-      itemName: m.ItemName,
-      plannedQty: m.PlannedQty,
-      issuedQty: m.IssuedQty,
-      remainingQty: m.RemainingQty,
-      warehouse: m.Warehouse,
-      uom: m.UoM,
-    }));
+    // Create a map for quick stock status lookup
+    const stockMap = new Map(
+      stockAvailability.map((s) => [s.ItemCode, s])
+    );
+
+    let hasStockWarning = false;
+
+    const items: PickListItem[] = materials.map((m) => {
+      const stock = stockMap.get(m.ItemCode);
+      const stockStatus = stock?.StockStatus ?? 'OK';
+      const availableQty = stock?.AvailableInWarehouse ?? 0;
+      const shortage = stock?.Shortage ?? 0;
+
+      if (stockStatus === 'INSUFFICIENT') {
+        hasStockWarning = true;
+      }
+
+      return {
+        itemCode: m.ItemCode,
+        itemName: m.ItemName,
+        plannedQty: m.PlannedQty,
+        issuedQty: m.IssuedQty,
+        remainingQty: m.RemainingQty,
+        warehouse: m.Warehouse,
+        uom: m.UoM,
+        availableQty,
+        stockStatus,
+        shortage,
+      };
+    });
 
     return {
       docEntry,
       items,
+      hasStockWarning,
     };
+  }
+
+  /**
+   * Check stock status for a work order
+   *
+   * Used for quick stock availability checks on work order cards.
+   *
+   * @param docEntry - Work order DocEntry
+   * @returns Whether any material has insufficient stock
+   */
+  async checkStockStatus(docEntry: number): Promise<boolean> {
+    const stockAvailability =
+      await this.stockRepository.getStockAvailabilityForWorkOrder(docEntry);
+
+    return stockAvailability.some((s) => s.StockStatus === 'INSUFFICIENT');
   }
 }
