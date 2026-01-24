@@ -40,12 +40,12 @@ if ($nssmCmd) {
     if ($service) {
         nssm stop AnsaMES 2>&1 | Out-Null
         nssm remove AnsaMES confirm 2>&1 | Out-Null
-        Write-Host "  ✓ Service removed" -ForegroundColor Green
+        Write-Host "  [OK] Service removed" -ForegroundColor Green
     } else {
-        Write-Host "  → Service not found" -ForegroundColor Gray
+        Write-Host "  --> Service not found" -ForegroundColor Gray
     }
 } else {
-    Write-Host "  → NSSM not found, skipping" -ForegroundColor Gray
+    Write-Host "  --> NSSM not found, skipping" -ForegroundColor Gray
 }
 
 # Remove IIS Website
@@ -54,9 +54,9 @@ Import-Module WebAdministration -ErrorAction SilentlyContinue
 $site = Get-Website -Name "AnsaMES" -ErrorAction SilentlyContinue
 if ($site) {
     Remove-Website -Name "AnsaMES"
-    Write-Host "  ✓ IIS site removed" -ForegroundColor Green
+    Write-Host "  [OK] IIS site removed" -ForegroundColor Green
 } else {
-    Write-Host "  → IIS site not found" -ForegroundColor Gray
+    Write-Host "  --> IIS site not found" -ForegroundColor Gray
 }
 
 # Remove Firewall Rules
@@ -64,9 +64,9 @@ Write-Host "`n[3/4] Removing Firewall Rules..." -ForegroundColor Cyan
 $rules = Get-NetFirewallRule -DisplayName "Ansa MES*" -ErrorAction SilentlyContinue
 if ($rules) {
     $rules | Remove-NetFirewallRule
-    Write-Host "  ✓ Firewall rules removed" -ForegroundColor Green
+    Write-Host "  [OK] Firewall rules removed" -ForegroundColor Green
 } else {
-    Write-Host "  → No firewall rules found" -ForegroundColor Gray
+    Write-Host "  --> No firewall rules found" -ForegroundColor Gray
 }
 
 # Remove Installation Files
@@ -74,14 +74,14 @@ if (-not $KeepData) {
     Write-Host "`n[4/4] Removing Installation Files..." -ForegroundColor Cyan
     if (Test-Path $InstallPath) {
         Remove-Item -Path $InstallPath -Recurse -Force
-        Write-Host "  ✓ Files removed: $InstallPath" -ForegroundColor Green
+        Write-Host "  [OK] Files removed: $InstallPath" -ForegroundColor Green
     } else {
-        Write-Host "  → Directory not found" -ForegroundColor Gray
+        Write-Host "  --> Directory not found" -ForegroundColor Gray
     }
 } else {
     Write-Host "`n[4/4] Keeping Data..." -ForegroundColor Cyan
-    Write-Host "  → Installation files preserved: $InstallPath" -ForegroundColor Gray
+    Write-Host "  --> Installation files preserved: $InstallPath" -ForegroundColor Gray
 }
 
-Write-Host "`n✓ Uninstall Complete" -ForegroundColor Green
+Write-Host "`n[OK] Uninstall Complete" -ForegroundColor Green
 Write-Host ""
