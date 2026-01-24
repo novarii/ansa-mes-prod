@@ -50,12 +50,18 @@ chmod +x ${DIST_ROOT}/${DEPLOY_DIR}/scripts/*.sh
 mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/nginx
 cp deployment/nginx.conf ${DIST_ROOT}/${DEPLOY_DIR}/nginx/
 
+# Copy Windows deployment scripts
+mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/windows
+cp deployment/windows/*.ps1 ${DIST_ROOT}/${DEPLOY_DIR}/windows/
+cp deployment/windows/*.md ${DIST_ROOT}/${DEPLOY_DIR}/windows/
+
 # Copy config template
 mkdir -p ${DIST_ROOT}/${DEPLOY_DIR}/config
 cp deployment/.env.template ${DIST_ROOT}/${DEPLOY_DIR}/config/.env.example
 
 # Copy documentation
 cp deployment/README.md ${DIST_ROOT}/${DEPLOY_DIR}/
+cp deployment/QUICK-START.md ${DIST_ROOT}/${DEPLOY_DIR}/ 2>/dev/null || true
 cp deployment/CHANGELOG.md ${DIST_ROOT}/${DEPLOY_DIR}/ 2>/dev/null || echo "No changelog found"
 
 # Create version file
