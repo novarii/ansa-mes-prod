@@ -25,11 +25,11 @@ function Write-Info { param($msg) Write-Host "  --> $msg" -ForegroundColor White
 function Write-Error { param($msg) Write-Host "  [X] $msg" -ForegroundColor Red }
 
 Write-Host @"
-╔══════════════════════════════════════════════════════════╗
-║                                                          ║
-║        Ansa MES Automated Windows Installer              ║
-║                                                          ║
-╚══════════════════════════════════════════════════════════╝
+============================================================
+
+         Ansa MES Automated Windows Installer
+
+============================================================
 "@ -ForegroundColor Cyan
 
 # ============================================================
@@ -503,11 +503,11 @@ if ($Interactive) {
 # ============================================================
 
 Write-Host "`n"
-Write-Host "╔══════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║                                                          ║" -ForegroundColor Green
-Write-Host "║              Installation Complete!                      ║" -ForegroundColor Green
-Write-Host "║                                                          ║" -ForegroundColor Green
-Write-Host "╚══════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
+Write-Host "                                                            " -ForegroundColor Green
+Write-Host "               Installation Complete!                       " -ForegroundColor Green
+Write-Host "                                                            " -ForegroundColor Green
+Write-Host "============================================================" -ForegroundColor Green
 
 Write-Host "`nInstallation Summary:" -ForegroundColor Cyan
 Write-Host "   Location: $InstallPath" -ForegroundColor White
